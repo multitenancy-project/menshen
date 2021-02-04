@@ -1,0 +1,14 @@
+*~
+*.lxt
+*.pyc
+*.vvp
+*.kate-swp
+rev/
+vivado*
+project_synth/
+
+xsim.dir/
+xvlog*
+
+tb_demo.v
+*.bit

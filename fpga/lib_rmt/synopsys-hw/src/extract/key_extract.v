@@ -590,7 +590,11 @@ generate
             end
         end
         //ram for key extract
-        blk_mem_gen_2
+        // blk_mem_gen_2
+		simple_dual_port_ram #(
+			.DATA_WIDTH=38,
+			.ADDR_WIDTH=5
+		)
         key_ram_38w_32d
         (
             .addra(c_index[4:0]),
@@ -606,7 +610,11 @@ generate
             .enb(1'b1)
         );
 
-        blk_mem_gen_3
+        // blk_mem_gen_3
+		simple_dual_port_ram #(
+			.DATA_WIDTH=193,
+			.ADDR_WIDTH=5
+		)
         mask_ram_193w_32d
         (
             .addra(c_index[4:0]),
@@ -843,7 +851,11 @@ generate
         // 	.C_INIT_FILE_NAME	("./key_extract.mif"),
         // 	.C_LOAD_INIT_FILE	(1)
         // )
-        blk_mem_gen_2
+        //blk_mem_gen_2
+		simple_dual_port_ram #(
+			.DATA_WIDTH=38,
+			.ADDR_WIDTH=5
+		)
         key_ram_38w_32d
         (
             .addra(c_index[4:0]),
@@ -859,8 +871,12 @@ generate
             .enb(1'b1)
         );
 
-        blk_mem_gen_3
-        mask_ram_193w_16d
+        // blk_mem_gen_3
+		simple_dual_port_ram #(
+			.DATA_WIDTH=193,
+			.ADDR_WIDTH=5
+		)
+        mask_ram_193w_32d
         (
             .addra(c_index[4:0]),
             .clka(clk),

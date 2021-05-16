@@ -598,8 +598,11 @@ end
 // 	.C_INIT_FILE_NAME	("./alu_2.mif"),
 // 	.C_LOAD_INIT_FILE	(1)
 // )
-parse_act_ram_ip
-parse_act_ram
+// parse_act_ram_ip
+simple_dual_port_ram #(
+	.DATA_WIDTH=160,
+	.ADDR_WIDTH=5
+) parse_act_ram
 (
 	// write port
 	.clka		(clk),

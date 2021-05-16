@@ -484,7 +484,11 @@ generate
         // 	.C_INIT_FILE_NAME	("./llup.mif"),
         // 	.C_LOAD_INIT_FILE	(1)
         // )
-        blk_mem_gen_1
+        // blk_mem_gen_1
+		simple_dual_port_ram #(
+			.DATA_WIDTH=625,
+			.ADDR_WIDTH=4
+		)
         act_ram_625w_16d
         (
             .addra(c_index_act[3:0]),
@@ -803,7 +807,11 @@ generate
         // 	.C_INIT_FILE_NAME	("./llup.mif"),
         // 	.C_LOAD_INIT_FILE	(1)
         // )
-        blk_mem_gen_1
+        // blk_mem_gen_1
+		simple_dual_port_ram #(
+			.DATA_WIDTH=625,
+			.ADDR_WIDTH=4
+		)
         act_ram_625w_16d
         (
             .addra(c_index_act[3:0]),

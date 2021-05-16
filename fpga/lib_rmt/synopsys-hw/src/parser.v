@@ -561,8 +561,10 @@ end
 // )
 //
 //
-parse_act_ram_ip
-parse_act_ram
+simple_dual_port_ram #(
+	.DATA_WIDTH=160,
+	.ADDR_WIDTH=5
+) parse_act_ram
 (
 	// write port
 	.clka		(axis_clk),

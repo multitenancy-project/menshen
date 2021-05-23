@@ -39,7 +39,7 @@ module parser #(
 	parameter PARSER_MOD_ID = 3'b0
 )
 (
-	input									axis_clk,
+	input									clk,
 	input									aresetn,
 
 	// input slvae axi stream
@@ -302,7 +302,7 @@ always@(*) begin
 	endcase
 end
 
-always@(posedge axis_clk) begin
+always@(posedge clk) begin
 	if (~aresetn) begin
 		state <= IDLE;
 
@@ -392,7 +392,7 @@ generate
 			.VAL_OUT_LEN()
 		)
 		sub_parser (
-			.clk				(axis_clk),
+			.clk				(clk),
 			.aresetn			(aresetn),
 
 			.parse_act_valid	(sub_parse_act_valid[index]),
@@ -523,7 +523,7 @@ always @(*) begin
 	endcase
 end
 
-always @(posedge axis_clk) begin
+always @(posedge clk) begin
 	if (~aresetn) begin
 		//
 		ctrl_state <= WAIT_FIRST_PKT;
@@ -562,19 +562,19 @@ end
 //
 //
 simple_dual_port_ram #(
-	.DATA_WIDTH=160,
-	.ADDR_WIDTH=5
+	.DATA_WIDTH(160),
+	.ADDR_WIDTH(5)
 ) parse_act_ram
 (
 	// write port
-	.clka		(axis_clk),
+	.clka		(clk),
 	.addra		(ctrl_wr_ram_addr[4:0]),
 	.dina		(ctrl_wr_ram_data),
 	.ena		(1'b1),
 	.wea		(ctrl_wr_ram_en),
 
 	//
-	.clkb		(axis_clk),
+	.clkb		(clk),
 	.addrb		(vlan_id[8:4]), // TODO: note that we may change due to little or big endian
 	.doutb		(bram_out),
 	.enb		(1'b1) // always set to 1

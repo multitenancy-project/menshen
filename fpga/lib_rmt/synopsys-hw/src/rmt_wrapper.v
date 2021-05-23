@@ -169,7 +169,7 @@ pkt_filter #(
 
 fallthrough_small_fifo #(
 	.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
-	.MAX_DEPTH_BITS(8)
+	.MAX_DEPTH_BITS(4)
 )
 pkt_fifo
 (
@@ -187,7 +187,7 @@ pkt_fifo
 
 fallthrough_small_fifo #(
 	.WIDTH(PKT_VEC_WIDTH),
-	.MAX_DEPTH_BITS(8)
+	.MAX_DEPTH_BITS(4)
 )
 phv_fifo
 (
@@ -214,7 +214,7 @@ parser #(
 )
 phv_parser
 (
-	.axis_clk		(clk),
+	.clk    		(clk),
 	.aresetn		(aresetn),
 	// input slvae axi stream
 	.s_axis_tdata	(s_axis_tdata_f),
@@ -251,7 +251,7 @@ stage #(
 )
 stage0
 (
-	.axis_clk				(clk),
+	.clk				(clk),
     .aresetn				(aresetn),
 
 	// input
@@ -285,7 +285,7 @@ stage #(
 )
 stage1
 (
-	.axis_clk				(clk),
+	.clk				(clk),
     .aresetn				(aresetn),
 
 	// input
@@ -319,7 +319,7 @@ stage #(
 )
 stage2
 (
-	.axis_clk				(clk),
+	.clk				(clk),
     .aresetn				(aresetn),
 
 	// input
@@ -352,7 +352,7 @@ stage #(
 )
 stage3
 (
-	.axis_clk				(clk),
+	.clk				(clk),
     .aresetn				(aresetn),
 
 	// input
@@ -386,7 +386,7 @@ stage #(
 )
 stage4
 (
-	.axis_clk				(clk),
+	.clk				(clk),
     .aresetn				(aresetn),
 
 	// input

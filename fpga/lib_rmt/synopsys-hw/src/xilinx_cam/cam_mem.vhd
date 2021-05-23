@@ -214,8 +214,8 @@ ARCHITECTURE xilinx OF cam_mem IS
   
   -- Read .mif file and assign the contents to a single STD_LOGIC_VECTOR
   -- constant.
-  CONSTANT init_file_content: STD_LOGIC_VECTOR(C_DEPTH*C_INIT_WIDTH-1 DOWNTO 0) 
-    := read_init_file(q_mem_init_file, C_MEM_INIT, C_DEPTH, C_INIT_WIDTH);
+  CONSTANT init_file_content: STD_LOGIC_VECTOR(C_DEPTH*C_INIT_WIDTH-1 DOWNTO 0) := (others => '0'); 
+  --  := read_init_file(q_mem_init_file, C_MEM_INIT, C_DEPTH, C_INIT_WIDTH);
 
   -----------------------------------------------------------------------------
   --Turn ON/OFF debug code. 
@@ -289,38 +289,38 @@ BEGIN
   -----------------------------------------------------------------------------
   -- Block Memory Implementation
   -----------------------------------------------------------------------------
-   gblk : IF (C_MEM_TYPE = C_BLOCK_MEM) GENERATE
+   --gblk : IF (C_MEM_TYPE = C_BLOCK_MEM) GENERATE
 
-    --Assign rd_data_bmem and wr_data_bmem to a chunk of RD_DATA and WR_DATA.
-    --This assignment has no effect for non-ternary mode because the width of 
-    --RD_DATA and WR_DATA is C_WIDTH anyways. This is left for future support 
-    --of ternary modes in the Block RAM implementation.
-    rd_data_bmem <= RD_DATA(C_WIDTH-1 DOWNTO 0);
-    wr_data_bmem <= WR_DATA(C_WIDTH-1 DOWNTO 0);
-    
-    blkmem : ENTITY cam.cam_mem_blk
-      GENERIC MAP (
-        C_MEM_INIT_FILE      => q_mem_init_file, --mif file needed for dmem.vhd
-        C_MEM_INIT           => C_MEM_INIT,
-        C_INIT_VECTOR        => init_file_content,
-        C_HAS_WR_ADDR        => C_HAS_WR_ADDR,
-        C_WR_ADDR_WIDTH      => C_WR_ADDR_WIDTH,
-        C_WR_COUNT_WIDTH     => C_WR_COUNT_WIDTH,
-        C_DEPTH              => C_DEPTH,
-        C_FAMILY             => C_FAMILY,
-        C_WIDTH              => C_WIDTH
-        )
-      PORT MAP (
-        BUSY     => BUSY,
-        CLK      => CLK,
-        EN       => EN,
-        RD_DATA  => rd_data_bmem,
-        WE       => WE,
-        WR_ADDR  => WR_ADDR,
-        WR_DATA  => wr_data_bmem,
-        WR_COUNT => WR_COUNT,
-        MATCHES  => MATCHES
-        );
-   END GENERATE gblk;
+   -- --Assign rd_data_bmem and wr_data_bmem to a chunk of RD_DATA and WR_DATA.
+   -- --This assignment has no effect for non-ternary mode because the width of 
+   -- --RD_DATA and WR_DATA is C_WIDTH anyways. This is left for future support 
+   -- --of ternary modes in the Block RAM implementation.
+   -- rd_data_bmem <= RD_DATA(C_WIDTH-1 DOWNTO 0);
+   -- wr_data_bmem <= WR_DATA(C_WIDTH-1 DOWNTO 0);
+   -- 
+   -- blkmem : ENTITY cam.cam_mem_blk
+   --   GENERIC MAP (
+   --     C_MEM_INIT_FILE      => q_mem_init_file, --mif file needed for dmem.vhd
+   --     C_MEM_INIT           => C_MEM_INIT,
+   --     C_INIT_VECTOR        => init_file_content,
+   --     C_HAS_WR_ADDR        => C_HAS_WR_ADDR,
+   --     C_WR_ADDR_WIDTH      => C_WR_ADDR_WIDTH,
+   --     C_WR_COUNT_WIDTH     => C_WR_COUNT_WIDTH,
+   --     C_DEPTH              => C_DEPTH,
+   --     C_FAMILY             => C_FAMILY,
+   --     C_WIDTH              => C_WIDTH
+   --     )
+   --   PORT MAP (
+   --     BUSY     => BUSY,
+   --     CLK      => CLK,
+   --     EN       => EN,
+   --     RD_DATA  => rd_data_bmem,
+   --     WE       => WE,
+   --     WR_ADDR  => WR_ADDR,
+   --     WR_DATA  => wr_data_bmem,
+   --     WR_COUNT => WR_COUNT,
+   --     MATCHES  => MATCHES
+   --     );
+   --END GENERATE gblk;
 
 END xilinx;

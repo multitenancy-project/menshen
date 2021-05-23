@@ -486,8 +486,8 @@ generate
         // )
         // blk_mem_gen_1
 		simple_dual_port_ram #(
-			.DATA_WIDTH=625,
-			.ADDR_WIDTH=4
+			.DATA_WIDTH(625),
+			.ADDR_WIDTH(4)
 		)
         act_ram_625w_16d
         (
@@ -752,7 +752,7 @@ generate
         	    .CMP_DATA_MASK		(),
         	    .BUSY				(),
         	    .MATCH				(match),
-        	    .MATCH_ADDR			(match_addr),
+        	    .MATCH_ADDR			(match_addr[3:0]),
 
         	    //.WE				(lookup_din_en),
         	    //.WR_ADDR			(lookup_din_addr),
@@ -785,7 +785,7 @@ generate
         	    .CMP_DATA_MASK		(),
         	    .BUSY				(),
         	    .MATCH				(match),
-        	    .MATCH_ADDR			(match_addr),
+        	    .MATCH_ADDR			(match_addr[3:0]),
 
         	    //.WE				(lookup_din_en),
         	    //.WR_ADDR			(lookup_din_addr),
@@ -809,8 +809,8 @@ generate
         // )
         // blk_mem_gen_1
 		simple_dual_port_ram #(
-			.DATA_WIDTH=625,
-			.ADDR_WIDTH=4
+			.DATA_WIDTH(625),
+			.ADDR_WIDTH(4)
 		)
         act_ram_625w_16d
         (
@@ -820,7 +820,7 @@ generate
             .ena(1'b1), // always set to 1
             .wea(c_wr_en_act),
 
-            .addrb(match_addr),
+            .addrb(match_addr[3:0]),
             .clkb(clk),
             .doutb(action_wire),
             .enb(1'b1) // always set to 1

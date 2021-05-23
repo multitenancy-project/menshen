@@ -467,8 +467,8 @@ generate
 		//page table
 		// page_tbl_16w_32d
 		simple_dual_port_ram #(
-			.DATA_WIDTH=16,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(16),
+			.ADDR_WIDTH(5)
 		)
 		page_tbl_16w_32d
 		(
@@ -490,8 +490,8 @@ generate
 		//2 cycles to get value
 		//blk_mem_gen_0
 		simple_dual_port_ram #(
-			.DATA_WIDTH=32,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(32),
+			.ADDR_WIDTH(5)
 		)
 		data_ram_32w_32d
 		(
@@ -709,8 +709,8 @@ generate
 		//page table
 		// page_tbl_16w_32d
 		simple_dual_port_ram #(
-			.DATA_WIDTH=16,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(16),
+			.ADDR_WIDTH(5)
 		)
 		page_tbl_16w_32d
 		(
@@ -732,8 +732,8 @@ generate
 		//2 cycles to get value
 		// blk_mem_gen_0
 		simple_dual_port_ram #(
-			.DATA_WIDTH=32,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(32),
+			.ADDR_WIDTH(5)
 		)
 		data_ram_32w_32d
 		(

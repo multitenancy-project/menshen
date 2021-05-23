@@ -84,7 +84,7 @@ wire								tlast_fifo;
 
 fallthrough_small_fifo #(
 	.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
-	.MAX_DEPTH_BITS(5)
+	.MAX_DEPTH_BITS(4)
 )
 pkt_fifo
 (

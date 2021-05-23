@@ -201,8 +201,8 @@ PACKAGE cam_pkg IS
   FUNCTION normalize_slv(vector : IN STD_LOGIC_VECTOR) RETURN STD_LOGIC_VECTOR;
 
 
-  attribute max_fanout:integer;
-  attribute max_fanout of all: entity is 10;
+  --attribute max_fanout:integer;
+  --attribute max_fanout of all: entity is 10;
 
 END cam_pkg;
 
@@ -475,9 +475,10 @@ PACKAGE BODY cam_pkg IS
     RETURN STD_LOGIC_VECTOR IS
     VARIABLE ret : STD_LOGIC_VECTOR((vector'high - vector'low) DOWNTO 0);
   BEGIN  -- normalize_slv
-    FOR i IN vector'low TO vector'high LOOP
-      ret(i - vector'low) := vector(i);
-    END LOOP;  -- i
+    ret := (others => '0');
+    --FOR i IN vector'low TO vector'high LOOP
+    --  ret(i - vector'low) := vector(i);
+    --END LOOP;  -- i
     RETURN ret;
     
   END normalize_slv;

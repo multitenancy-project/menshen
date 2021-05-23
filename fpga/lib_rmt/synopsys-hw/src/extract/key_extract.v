@@ -592,8 +592,8 @@ generate
         //ram for key extract
         // blk_mem_gen_2
 		simple_dual_port_ram #(
-			.DATA_WIDTH=38,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(38),
+			.ADDR_WIDTH(5)
 		)
         key_ram_38w_32d
         (
@@ -612,8 +612,8 @@ generate
 
         // blk_mem_gen_3
 		simple_dual_port_ram #(
-			.DATA_WIDTH=193,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(193),
+			.ADDR_WIDTH(5)
 		)
         mask_ram_193w_32d
         (
@@ -853,8 +853,8 @@ generate
         // )
         //blk_mem_gen_2
 		simple_dual_port_ram #(
-			.DATA_WIDTH=38,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(38),
+			.ADDR_WIDTH(5)
 		)
         key_ram_38w_32d
         (
@@ -873,8 +873,8 @@ generate
 
         // blk_mem_gen_3
 		simple_dual_port_ram #(
-			.DATA_WIDTH=193,
-			.ADDR_WIDTH=5
+			.DATA_WIDTH(193),
+			.ADDR_WIDTH(5)
 		)
         mask_ram_193w_32d
         (

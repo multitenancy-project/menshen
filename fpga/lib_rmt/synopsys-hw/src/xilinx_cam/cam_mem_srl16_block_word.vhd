@@ -81,8 +81,8 @@ LIBRARY cam;
 USE cam.cam_pkg.ALL ;
 
 
-library UNISIM;
-use UNISIM.VComponents.all;
+--library UNISIM;
+--use UNISIM.VComponents.all;
 
 ENTITY cam_mem_srl16_block_word IS
 
@@ -151,64 +151,64 @@ BEGIN  -- xilinx
   we_inverted <= not WE ;
 
   -- Generate SRL16s and CY muxes
-  gsrl : FOR t IN 0 TO C_SRL16_SRLS_PER_WORD-1 GENERATE
+  --gsrl : FOR t IN 0 TO C_SRL16_SRLS_PER_WORD-1 GENERATE
 
-    --Generate an SRL16 for a 4-bit chunk of RD_DATA
+  --  --Generate an SRL16 for a 4-bit chunk of RD_DATA
 
-   gini0 : IF (C_MEM_INIT = 0) GENERATE
+  -- gini0 : IF (C_MEM_INIT = 0) GENERATE
 
-    psrl : srl16e
-      GENERIC MAP (INIT => X"0000") 
-      PORT MAP (
-        D               => WR_DATA_BITS(t),
-        Q               => srl16_match(t),
-        A0              => RD_DATA(t*4),
-        A1              => RD_DATA((t*4)+1),
-        A2              => RD_DATA((t*4)+2),
-        A3              => RD_DATA((t*4)+3),
-        CE              => WE,
-        CLK             => CLK
-        );
-    end generate  gini0 ;
+  --  psrl : srl16e
+  --    GENERIC MAP (INIT => X"0000") 
+  --    PORT MAP (
+  --      D               => WR_DATA_BITS(t),
+  --      Q               => srl16_match(t),
+  --      A0              => RD_DATA(t*4),
+  --      A1              => RD_DATA((t*4)+1),
+  --      A2              => RD_DATA((t*4)+2),
+  --      A3              => RD_DATA((t*4)+3),
+  --      CE              => WE,
+  --      CLK             => CLK
+  --      );
+  --  end generate  gini0 ;
 
-   gini1 : IF (C_MEM_INIT = 1) GENERATE
+  -- gini1 : IF (C_MEM_INIT = 1) GENERATE
  
-    psrl : srl16e
-       GENERIC MAP (INIT => INIT_DECODE(C_INIT_WORD_INDEX(((t+1)*4-1) DOWNTO (t*4)), C_TERNARY_MODE))
-      PORT MAP ( 
-        D               => WR_DATA_BITS(t),
-        Q               => srl16_match(t),
-        A0              => RD_DATA(t*4),
-        A1              => RD_DATA((t*4)+1),
-        A2              => RD_DATA((t*4)+2),
-        A3              => RD_DATA((t*4)+3),
-        CE              => WE,    
-        CLK             => CLK
-        );
-    end generate  gini1 ; 
+  --  psrl : srl16e
+  --     GENERIC MAP (INIT => INIT_DECODE(C_INIT_WORD_INDEX(((t+1)*4-1) DOWNTO (t*4)), C_TERNARY_MODE))
+  --    PORT MAP ( 
+  --      D               => WR_DATA_BITS(t),
+  --      Q               => srl16_match(t),
+  --      A0              => RD_DATA(t*4),
+  --      A1              => RD_DATA((t*4)+1),
+  --      A2              => RD_DATA((t*4)+2),
+  --      A3              => RD_DATA((t*4)+3),
+  --      CE              => WE,    
+  --      CLK             => CLK
+  --      );
+  --  end generate  gini1 ; 
 
-    -- Generate least significant CY mux : one of the mux input tied to inverted WE
-    lsmux   : IF (t = 0) GENERATE
-      gmux1 : muxcy
-        PORT MAP (
-          O  => carry(0),
-          DI => ZERO,
-          CI => we_inverted,
-          S  => srl16_match(0)
-          );
-    END GENERATE lsmux;
+  --  -- Generate least significant CY mux : one of the mux input tied to inverted WE
+  --  lsmux   : IF (t = 0) GENERATE
+  --    gmux1 : muxcy
+  --      PORT MAP (
+  --        O  => carry(0),
+  --        DI => ZERO,
+  --        CI => we_inverted,
+  --        S  => srl16_match(0)
+  --        );
+  --  END GENERATE lsmux;
 
-    -- Generate CY muxes : inputs to mux = '0' and output of previous mux, selected by SRL16 ouput
-    msmux   : IF (t > 0) GENERATE
-      gmuxn : muxcy
-        PORT MAP (
-          O  => carry(t),
-          DI => ZERO,
-          CI => carry(t-1),
-          S  => srl16_match(t)
-          );
-    END GENERATE msmux;
+  --  -- Generate CY muxes : inputs to mux = '0' and output of previous mux, selected by SRL16 ouput
+  --  msmux   : IF (t > 0) GENERATE
+  --    gmuxn : muxcy
+  --      PORT MAP (
+  --        O  => carry(t),
+  --        DI => ZERO,
+  --        CI => carry(t-1),
+  --        S  => srl16_match(t)
+  --        );
+  --  END GENERATE msmux;
 
-  END GENERATE gsrl;
+  --END GENERATE gsrl;
 
 END xilinx;

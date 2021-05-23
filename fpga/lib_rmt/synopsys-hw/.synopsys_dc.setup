@@ -1,0 +1,13 @@
+set target_library gscl45nm.db
+set link_library [concat $target_library "*"]
+set search_path [concat $search_path /home/tw1921/FreePDK45/osu_soc/lib/files]
+set designer "shit"
+set compnay "noob"
+
+# Define path directories
+set source_path "./src/"
+set script_path "./scripts/"
+set log_path "./log/"
+set ddc_path "./ddc/"
+set db_path "./db/"
+set netlist_path "./netlist/"

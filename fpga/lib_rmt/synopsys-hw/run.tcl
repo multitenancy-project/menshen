@@ -10,7 +10,7 @@ link
 #
 # current_design fallthrough_small_fifo
 
-create_clock -period 6.25 clk
+create_clock -period 0.5 clk
 
 compile_ultra
 

@@ -104,7 +104,7 @@ always @(*) begin
 	case (state) 
 		WAIT_FIRST_PKT: begin
 			// 1st packet
-			if (s_axis_tvalid) begin
+			if (s_axis_tvalid && m_axis_tready) begin
 				r_1st_tdata_next = s_axis_tdata;
 				r_1st_tuser_next = s_axis_tuser;
 				r_1st_tkeep_next = s_axis_tkeep;
@@ -121,13 +121,13 @@ always @(*) begin
 		end
 		WAIT_SECOND_PKT: begin
 			// 2nd packet
-			if (s_axis_tvalid) begin
+			if (s_axis_tvalid && m_axis_tready) begin
 				r_tdata = r_1st_tdata;
 				r_tkeep = r_1st_tkeep;
 				r_tuser = r_1st_tuser;
 				r_tlast = r_1st_tlast;
 				r_tvalid = r_1st_tvalid;
-
+				
 				if (s_axis_tdata[64+:16]==`CONTROL_PORT) begin
 					c_switch = 1;
 					state_next = FLUSH_CTL;
@@ -138,25 +138,29 @@ always @(*) begin
 			end
 		end
 		FLUSH_DATA: begin
-			r_tdata = s_axis_tdata_d1;
-			r_tkeep = s_axis_tkeep_d1;
-			r_tuser = s_axis_tuser_d1;
-			r_tlast = s_axis_tlast_d1;
-			r_tvalid = s_axis_tvalid_d1;
-			if (s_axis_tvalid_d1 && s_axis_tlast_d1) begin
-				state_next = WAIT_FIRST_PKT;
+			if (s_axis_tvalid_d1 && m_axis_tready) begin
+				r_tdata = s_axis_tdata_d1;
+				r_tkeep = s_axis_tkeep_d1;
+				r_tuser = s_axis_tuser_d1;
+				r_tlast = s_axis_tlast_d1;
+				r_tvalid = s_axis_tvalid_d1;
+				if (s_axis_tvalid_d1 && s_axis_tlast_d1) begin
+					state_next = WAIT_FIRST_PKT;
+				end
 			end
 		end
 		FLUSH_CTL: begin
-			c_switch = 1;
+			if (s_axis_tvalid_d1 && m_axis_tready) begin
+				c_switch = 1;
 
-			r_tdata = s_axis_tdata_d1;
-			r_tkeep = s_axis_tkeep_d1;
-			r_tuser = s_axis_tuser_d1;
-			r_tlast = s_axis_tlast_d1;
-			r_tvalid = s_axis_tvalid_d1;
-			if (s_axis_tvalid_d1 && s_axis_tlast_d1) begin
-				state_next = WAIT_FIRST_PKT;
+				r_tdata = s_axis_tdata_d1;
+				r_tkeep = s_axis_tkeep_d1;
+				r_tuser = s_axis_tuser_d1;
+				r_tlast = s_axis_tlast_d1;
+				r_tvalid = s_axis_tvalid_d1;
+				if (s_axis_tvalid_d1 && s_axis_tlast_d1) begin
+					state_next = WAIT_FIRST_PKT;
+				end
 			end
 		end
 		DROP_PKT: begin

@@ -207,7 +207,7 @@ phv_fifo
 	.clk			(clk)
 );
 
-parser #(
+parser_top #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH), //for 100g mac exclusively
 	.C_S_AXIS_TUSER_WIDTH(),
 	.PKT_HDR_LEN()

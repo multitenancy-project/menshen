@@ -167,6 +167,8 @@ pkt_filter #(
 	.ctrl_m_axis_tvalid (ctrl_s_axis_tvalid_1)
 );
 
+// we will have multiple pkt fifos and phv fifos
+
 fallthrough_small_fifo #(
 	.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
 	.MAX_DEPTH_BITS(8)
@@ -229,6 +231,8 @@ phv_parser
 	.pkt_hdr_vec	(stg0_phv_in),
 	// 
 	.stg_ready_in	(stg0_ready),
+
+	// output to different 
 
 	// control path
     .ctrl_s_axis_tdata(ctrl_s_axis_tdata_1),
@@ -414,13 +418,13 @@ stage4
 );
 
 
-deparser #(
+deparser_top #(
 	.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
 	.C_AXIS_TUSER_WIDTH(),
 	.C_PKT_VEC_WIDTH()
 )
 phv_deparser (
-	.clk					(clk),
+	.axis_clk				(clk),
 	.aresetn				(aresetn),
 
 	.pkt_fifo_tdata			(tdata_fifo),

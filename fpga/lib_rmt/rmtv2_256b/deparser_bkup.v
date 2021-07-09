@@ -350,7 +350,7 @@ always @(*) begin
 		end
 		FLUSH_PKT: begin
 			if (!pkt_fifo_empty) begin
-				depar_out_tvalid = pkt_fifo_tdata;
+				depar_out_tdata = pkt_fifo_tdata;
 				depar_out_tuser =  pkt_fifo_tuser;
 				depar_out_tkeep =  pkt_fifo_tkeep;
 				depar_out_tlast =  pkt_fifo_tlast;

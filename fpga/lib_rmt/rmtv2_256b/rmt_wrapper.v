@@ -5,7 +5,8 @@ module rmt_wrapper #(
 	// AXI Stream parameters
 	// Slave
 	parameter C_S_AXIS_DATA_WIDTH = 256,
-	parameter C_S_AXIS_TUSER_WIDTH = 128
+	parameter C_S_AXIS_TUSER_WIDTH = 128,
+	parameter C_NUM_QUEUES = 4
 	// Master
 	// self-defined
 )
@@ -33,20 +34,6 @@ module rmt_wrapper #(
 
 /*=================================================*/
 localparam PKT_VEC_WIDTH = (6+4+2)*8*8+256;
-// pkt fifo
-wire								pkt_fifo_rd_en;
-wire								pkt_fifo_nearly_full;
-wire								pkt_fifo_empty;
-wire [C_S_AXIS_DATA_WIDTH-1:0]		tdata_fifo;
-wire [C_S_AXIS_TUSER_WIDTH-1:0]		tuser_fifo;
-wire [C_S_AXIS_DATA_WIDTH/8-1:0]	tkeep_fifo;
-wire								tlast_fifo;
-// phv fifo
-wire								phv_fifo_rd_en;
-wire								phv_fifo_nearly_full;
-wire								phv_fifo_empty;
-wire [PKT_VEC_WIDTH-1:0]			phv_fifo_out_w;
-wire								phv_valid;
 // 
 wire								stg0_phv_in_valid;
 wire								stg0_phv_in_valid_w;
@@ -69,10 +56,6 @@ wire [PKT_VEC_WIDTH-1:0]			stg3_phv_out;
 wire								stg3_phv_out_valid;
 wire								stg3_phv_out_valid_w;
 reg									stg3_phv_out_valid_r;
-wire [PKT_VEC_WIDTH-1:0]			stg4_phv_out;
-wire								stg4_phv_out_valid;
-wire								stg4_phv_out_valid_w;
-reg									stg4_phv_out_valid_r;
 
 // back pressure signals
 wire s_axis_tready_p;
@@ -81,7 +64,6 @@ wire stg1_ready;
 wire stg2_ready;
 wire stg3_ready;
 wire stg4_ready;
-
 
 //NOTE: to filter out packets other than UDP/IP.
 wire [C_S_AXIS_DATA_WIDTH-1:0]				s_axis_tdata_f;
@@ -134,7 +116,6 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_7;
 wire 										ctrl_s_axis_tvalid_7;
 wire 										ctrl_s_axis_tlast_7;
 
-assign s_axis_tready_f = !pkt_fifo_nearly_full;
 
 pkt_filter #(
 	.C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
@@ -169,45 +150,97 @@ pkt_filter #(
 
 // we will have multiple pkt fifos and phv fifos
 
-fallthrough_small_fifo #(
-	.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
-	.MAX_DEPTH_BITS(8)
-)
-pkt_fifo
-(
-	.din									({s_axis_tdata_f, s_axis_tuser_f, s_axis_tkeep_f, s_axis_tlast_f}),
-	.wr_en									(s_axis_tvalid_f & ~pkt_fifo_nearly_full),
-	.rd_en									(pkt_fifo_rd_en),
-	.dout									({tdata_fifo, tuser_fifo, tkeep_fifo, tlast_fifo}),
-	.full									(),
-	.prog_full								(),
-	.nearly_full							(pkt_fifo_nearly_full),
-	.empty									(pkt_fifo_empty),
-	.reset									(~aresetn),
-	.clk									(clk)
-);
+// pkt fifo wires
+wire [C_S_AXIS_DATA_WIDTH-1:0]		pkt_fifo_tdata_out [C_NUM_QUEUES-1:0];
+wire [C_S_AXIS_TUSER_WIDTH-1:0]		pkt_fifo_tuser_out [C_NUM_QUEUES-1:0];
+wire [C_S_AXIS_DATA_WIDTH/8-1:0]	pkt_fifo_tkeep_out [C_NUM_QUEUES-1:0];
+wire [C_NUM_QUEUES-1:0]				pkt_fifo_tlast_out;
 
-fallthrough_small_fifo #(
-	.WIDTH(PKT_VEC_WIDTH),
-	.MAX_DEPTH_BITS(8)
-)
-phv_fifo
-(
-	.din			(stg4_phv_out),
-	.wr_en			(stg4_phv_out_valid_w),
-	// .din			(stg1_phv_out),
-	// .wr_en			(stg1_phv_out_valid_w),
+// output from parser
+wire [C_S_AXIS_DATA_WIDTH-1:0]		parser_m_axis_tdata [C_NUM_QUEUES-1:0];
+wire [C_S_AXIS_TUSER_WIDTH-1:0]		parser_m_axis_tuser [C_NUM_QUEUES-1:0];
+wire [C_S_AXIS_DATA_WIDTH/8-1:0]	parser_m_axis_tkeep [C_NUM_QUEUES-1:0];
+wire [C_NUM_QUEUES-1:0]				parser_m_axis_tlast;
+wire [C_NUM_QUEUES-1:0]				parser_m_axis_tvalid;
 
-	.rd_en			(phv_fifo_rd_en),
-	.dout			(phv_fifo_out_w),
+wire [C_NUM_QUEUES-1:0]				pkt_fifo_rd_en;
+wire [C_NUM_QUEUES-1:0]				pkt_fifo_nearly_full;
+wire [C_NUM_QUEUES-1:0]				pkt_fifo_empty;
 
-	.full			(),
-	.prog_full		(),
-	.nearly_full	(phv_fifo_nearly_full),
-	.empty			(phv_fifo_empty),
-	.reset			(~aresetn),
-	.clk			(clk)
-);
+assign s_axis_tready_f = !pkt_fifo_nearly_full[0] ||
+							!pkt_fifo_nearly_full[1] ||
+							!pkt_fifo_nearly_full[2] ||
+							!pkt_fifo_nearly_full[3];
+
+generate 
+	genvar i;
+	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
+		sub_pkt_fifo
+	// pkt fifos
+		fallthrough_small_fifo #(
+			.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
+			.MAX_DEPTH_BITS(8)
+		)
+		pkt_fifo
+		(
+			.wr_en									(parser_m_axis_tvalid[i]),
+			.din									({parser_m_axis_tdata[i],
+														parser_m_axis_tuser[i],
+														parser_m_axis_tkeep[i],
+														parser_m_axis_tlast[i]}),
+
+			.rd_en									(pkt_fifo_rd_en[i]),
+			.dout									({pkt_fifo_tdata_out[i], 
+														pkt_fifo_tuser_out[i], 
+														pkt_fifo_tkeep_out[i], 
+														pkt_fifo_tlast_out[i]}),
+
+			.full									(),
+			.prog_full								(),
+			.nearly_full							(pkt_fifo_nearly_full[i]),
+			.empty									(pkt_fifo_empty[i]),
+			.reset									(~aresetn),
+			.clk									(clk)
+		);
+	end
+endgenerate
+
+wire [PKT_VEC_WIDTH-1:0]		last_stg_phv_out [C_NUM_QUEUES-1:0];
+wire [PKT_VEC_WIDTH-1:0]		phv_fifo_out [C_NUM_QUEUES-1:0];
+wire							last_stg_phv_out_valid [C_NUM_QUEUES-1:0];
+
+
+wire							phv_fifo_rd_en [C_NUM_QUEUES-1:0];
+wire							phv_fifo_nearly_full [C_NUM_QUEUES-1:0];
+wire							phv_fifo_empty [C_NUM_QUEUES-1:0];
+
+generate
+	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
+		sub_phv_fifo
+		// multiple PHV fifos
+		fallthrough_small_fifo #(
+			.WIDTH(PKT_VEC_WIDTH),
+			.MAX_DEPTH_BITS(8)
+		)
+		phv_fifo
+		(
+			.din			(last_stg_phv_out[i]),
+			.wr_en			(last_stg_phv_out_valid[i]),
+			// .din			(stg1_phv_out),
+			// .wr_en			(stg1_phv_out_valid_w),
+		
+			.rd_en			(phv_fifo_rd_en[i]),
+			.dout			(phv_fifo_out[i]),
+		
+			.full			(),
+			.prog_full		(),
+			.nearly_full	(phv_fifo_nearly_full[i]),
+			.empty			(phv_fifo_empty[i]),
+			.reset			(~aresetn),
+			.clk			(clk)
+		);
+	end
+endgenerate
 
 parser_top #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH), //for 100g mac exclusively
@@ -232,7 +265,34 @@ phv_parser
 	// 
 	.stg_ready_in	(stg0_ready),
 
-	// output to different 
+	// output to different pkt fifos
+	.m_axis_tdata_0					(parser_m_axis_tdata[0]),
+	.m_axis_tuser_0					(parser_m_axis_tuser[0]),
+	.m_axis_tkeep_0					(parser_m_axis_tkeep[0]),
+	.m_axis_tlast_0					(parser_m_axis_tlast[0]),
+	.m_axis_tvalid_0				(parser_m_axis_tvalid[0]),
+	.m_axis_tready_0				(~pkt_fifo_nearly_full[0]),
+
+	.m_axis_tdata_1					(parser_m_axis_tdata[1]),
+	.m_axis_tuser_1					(parser_m_axis_tuser[1]),
+	.m_axis_tkeep_1					(parser_m_axis_tkeep[1]),
+	.m_axis_tlast_1					(parser_m_axis_tlast[1]),
+	.m_axis_tvalid_1				(parser_m_axis_tvalid[1]),
+	.m_axis_tready_1				(~pkt_fifo_nearly_full[1]),
+
+	.m_axis_tdata_2					(parser_m_axis_tdata[2]),
+	.m_axis_tuser_2					(parser_m_axis_tuser[2]),
+	.m_axis_tkeep_2					(parser_m_axis_tkeep[2]),
+	.m_axis_tlast_2					(parser_m_axis_tlast[2]),
+	.m_axis_tvalid_2				(parser_m_axis_tvalid[2]),
+	.m_axis_tready_2				(~pkt_fifo_nearly_full[2]),
+
+	.m_axis_tdata_3					(parser_m_axis_tdata[3]),
+	.m_axis_tuser_3					(parser_m_axis_tuser[3]),
+	.m_axis_tkeep_3					(parser_m_axis_tkeep[3]),
+	.m_axis_tlast_3					(parser_m_axis_tlast[3]),
+	.m_axis_tvalid_3				(parser_m_axis_tvalid[3]),
+	.m_axis_tready_3				(~pkt_fifo_nearly_full[3]),
 
 	// control path
     .ctrl_s_axis_tdata(ctrl_s_axis_tdata_1),
@@ -383,8 +443,8 @@ stage3
 	.c_m_axis_tvalid(ctrl_s_axis_tvalid_6)
 );
 
-
-stage #(
+// [NOTICE] change to last stage
+last_stage #(
 	.C_S_AXIS_DATA_WIDTH(256),
 	.STAGE_ID(4)
 )
@@ -396,12 +456,24 @@ stage4
 	// input
     .phv_in					(stg3_phv_out),
     .phv_in_valid			(stg3_phv_out_valid_w),
-	// output
-    .phv_out				(stg4_phv_out),
-    .phv_out_valid			(stg4_phv_out_valid),
 	// back-pressure signals
 	.stage_ready_out		(stg4_ready),
-	.stage_ready_in			(!phv_fifo_nearly_full),
+	// output
+    .phv_out_0				(last_stg_phv_out[0]),
+    .phv_out_valid_0		(last_stg_phv_out_valid[0]),
+	.phv_fifo_ready_0		(~phv_fifo_nearly_full[0]),
+
+    .phv_out_1				(last_stg_phv_out[1]),
+    .phv_out_valid_1		(last_stg_phv_out_valid[1]),
+	.phv_fifo_ready_1		(~phv_fifo_nearly_full[1]),
+
+    .phv_out_2				(last_stg_phv_out[2]),
+    .phv_out_valid_2		(last_stg_phv_out_valid[2]),
+	.phv_fifo_ready_2		(~phv_fifo_nearly_full[2]),
+
+    .phv_out_3				(last_stg_phv_out[3]),
+    .phv_out_valid_3		(last_stg_phv_out_valid[3]),
+	.phv_fifo_ready_3		(~phv_fifo_nearly_full[3]),
 
 	// control path
     .c_s_axis_tdata(ctrl_s_axis_tdata_6),
@@ -417,42 +489,99 @@ stage4
 	.c_m_axis_tvalid(ctrl_s_axis_tvalid_7)
 );
 
+//
 
-deparser_top #(
-	.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
-	.C_AXIS_TUSER_WIDTH(),
-	.C_PKT_VEC_WIDTH()
+wire [C_S_AXIS_DATA_WIDTH-1:0]			depar_out_tdata [C_NUM_QUEUES-1:0];
+wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]	depar_out_tkeep [C_NUM_QUEUES-1:0];
+wire [C_S_AXIS_TUSER_WIDTH-1:0]			depar_out_tuser [C_NUM_QUEUES-1:0];
+wire									depar_out_tvalid [C_NUM_QUEUES-1:0];
+wire 									depar_out_tready [C_NUM_QUEUES-1:0];
+wire 									depar_out_tlast [C_NUM_QUEUES-1:0];
+
+generate
+	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
+		sub_deparser_top
+		deparser_top #(
+			.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
+			.C_AXIS_TUSER_WIDTH(),
+			.C_PKT_VEC_WIDTH()
+		)
+		phv_deparser (
+			.axis_clk				(clk),
+			.aresetn				(aresetn),
+		
+			.pkt_fifo_tdata			(pkt_fifo_tdata_out[i]),
+			.pkt_fifo_tkeep			(pkt_fifo_tkeep_out[i]),
+			.pkt_fifo_tuser			(pkt_fifo_tuser_out[i]),
+			.pkt_fifo_tlast			(pkt_fifo_tlast_out[i]),
+			.pkt_fifo_empty			(pkt_fifo_empty[i]),
+			// output from STAGE
+			.pkt_fifo_rd_en			(pkt_fifo_rd_en[i]),
+		
+			.phv_fifo_out			(last_stg_phv_out[i]),
+			.phv_fifo_empty			(phv_fifo_empty[i]),
+			.phv_fifo_rd_en			(phv_fifo_rd_en[i]),
+			// output
+			.depar_out_tdata		(depar_out_tdata[i]),
+			.depar_out_tkeep		(depar_out_tkeep[i]),
+			.depar_out_tuser		(depar_out_tuser[i]),
+			.depar_out_tvalid		(depar_out_tvalid[i]),
+			.depar_out_tlast		(depar_out_tlast[i]),
+			.depar_out_tready		(depar_out_tready[i]), // input
+		
+			// control path
+			.ctrl_s_axis_tdata(ctrl_s_axis_tdata_7),
+			.ctrl_s_axis_tuser(ctrl_s_axis_tuser_7),
+			.ctrl_s_axis_tkeep(ctrl_s_axis_tkeep_7),
+			.ctrl_s_axis_tlast(ctrl_s_axis_tlast_7),
+			.ctrl_s_axis_tvalid(ctrl_s_axis_tvalid_7)
+		);
+	end
+endgenerate
+
+// output arbiter
+output_arbiter #(
+	.C_AXIS_DATA_WIDTH(256),
+	.C_AXIS_TUSER_WIDTH(128)
 )
-phv_deparser (
-	.axis_clk				(clk),
-	.aresetn				(aresetn),
-
-	.pkt_fifo_tdata			(tdata_fifo),
-	.pkt_fifo_tkeep			(tkeep_fifo),
-	.pkt_fifo_tuser			(tuser_fifo),
-	.pkt_fifo_tlast			(tlast_fifo),
-	.pkt_fifo_empty			(pkt_fifo_empty),
-	// output from STAGE
-	.pkt_fifo_rd_en			(pkt_fifo_rd_en),
-
-	.phv_fifo_out			(phv_fifo_out_w),
-	.phv_fifo_empty			(phv_fifo_empty),
-	.phv_fifo_rd_en			(phv_fifo_rd_en),
+out_arb (
+	.axis_clk						(clk),
+	.aresetn						(aresetn),
 	// output
-	.depar_out_tdata		(m_axis_tdata),
-	.depar_out_tkeep		(m_axis_tkeep),
-	.depar_out_tuser		(m_axis_tuser),
-	.depar_out_tvalid		(m_axis_tvalid),
-	.depar_out_tlast		(m_axis_tlast),
-	// input
-	.depar_out_tready		(m_axis_tready),
+	.m_axis_tdata					(m_axis_tdata),
+	.m_axis_tkeep					(m_axis_tkeep),
+	.m_axis_tuser					(m_axis_tuser),
+	.m_axis_tlast					(m_axis_tlast),
+	.m_axis_tvalid					(m_axis_tvalid),
+	.m_axis_tready					(m_axis_tready),
+	// input from deparser
+	.s_axis_tdata_0					(depar_out_tdata[0]),
+	.s_axis_tkeep_0					(depar_out_tkeep[0]),
+	.s_axis_tuser_0					(depar_out_tuser[0]),
+	.s_axis_tlast_0					(depar_out_tlast[0]),
+	.s_axis_tvalid_0				(depar_out_tvalid[0]),
+	.s_axis_tready_0				(depar_out_tready[0]),
 
-	// control path
-	.ctrl_s_axis_tdata(ctrl_s_axis_tdata_7),
-	.ctrl_s_axis_tuser(ctrl_s_axis_tuser_7),
-	.ctrl_s_axis_tkeep(ctrl_s_axis_tkeep_7),
-	.ctrl_s_axis_tlast(ctrl_s_axis_tlast_7),
-	.ctrl_s_axis_tvalid(ctrl_s_axis_tvalid_7)
+	.s_axis_tdata_1					(depar_out_tdata[1]),
+	.s_axis_tkeep_1					(depar_out_tkeep[1]),
+	.s_axis_tuser_1					(depar_out_tuser[1]),
+	.s_axis_tlast_1					(depar_out_tlast[1]),
+	.s_axis_tvalid_1				(depar_out_tvalid[1]),
+	.s_axis_tready_1				(depar_out_tready[1]),
+
+	.s_axis_tdata_2					(depar_out_tdata[2]),
+	.s_axis_tkeep_2					(depar_out_tkeep[2]),
+	.s_axis_tuser_2					(depar_out_tuser[2]),
+	.s_axis_tlast_2					(depar_out_tlast[2]),
+	.s_axis_tvalid_2				(depar_out_tvalid[2]),
+	.s_axis_tready_2				(depar_out_tready[2]),
+
+	.s_axis_tdata_3					(depar_out_tdata[3]),
+	.s_axis_tkeep_3					(depar_out_tkeep[3]),
+	.s_axis_tuser_3					(depar_out_tuser[3]),
+	.s_axis_tlast_3					(depar_out_tlast[3]),
+	.s_axis_tvalid_3				(depar_out_tvalid[3]),
+	.s_axis_tready_3				(depar_out_tready[3])
 );
 
 
@@ -463,7 +592,6 @@ always @(posedge clk) begin
 		stg1_phv_out_valid_r <= 0;
 		stg2_phv_out_valid_r <= 0;
 		stg3_phv_out_valid_r <= 0;
-		stg4_phv_out_valid_r <= 0;
 	end
 	else begin
 		stg0_phv_in_valid_r <= stg0_phv_in_valid;
@@ -471,7 +599,6 @@ always @(posedge clk) begin
 		stg1_phv_out_valid_r <= stg1_phv_out_valid;
 		stg2_phv_out_valid_r <= stg2_phv_out_valid;
 		stg3_phv_out_valid_r <= stg3_phv_out_valid;
-		stg4_phv_out_valid_r <= stg4_phv_out_valid;
 	end
 end
 
@@ -480,7 +607,18 @@ assign stg0_phv_out_valid_w = stg0_phv_out_valid ;//& ~stg0_phv_out_valid_r;
 assign stg1_phv_out_valid_w = stg1_phv_out_valid ;//& ~stg1_phv_out_valid_r;
 assign stg2_phv_out_valid_w = stg2_phv_out_valid ;//& ~stg2_phv_out_valid_r;
 assign stg3_phv_out_valid_w = stg3_phv_out_valid ;//& ~stg3_phv_out_valid_r;
-assign stg4_phv_out_valid_w = stg4_phv_out_valid ;//& ~stg4_phv_out_valid_r;
+
+
+(* mark_debug = "true" *) wire [31:0] phv_con;
+(* mark_debug = "true" *) wire [31:0] phv_con_1;
+(* mark_debug = "true" *) wire [31:0] phv_con_2;
+(* mark_debug = "true" *) wire phv_valid;
+
+assign phv_valid = last_stg_phv_out_valid[0];
+assign phv_con = last_stg_phv_out[0][256+8*16+3*32+:32];
+assign phv_con_1 = last_stg_phv_out[0][256+8*16+2*32+:32];
+assign phv_con_2 = last_stg_phv_out[0][256+8*16+1*32+:32];
 
 
 endmodule
+

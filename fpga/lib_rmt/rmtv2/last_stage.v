@@ -1,13 +1,15 @@
 `timescale 1ns / 1ps
 
-module stage #(
+
+module last_stage #(
     parameter C_S_AXIS_DATA_WIDTH = 512,
     parameter C_S_AXIS_TUSER_WIDTH = 128,
     parameter STAGE_ID = 0,  // valid: 0-4
     parameter PHV_LEN = 48*8+32*8+16*8+256,
     parameter KEY_LEN = 48*2+32*2+16*2+1,
     parameter ACT_LEN = 25,
-    parameter KEY_OFF = 6*3+20
+    parameter KEY_OFF = 6*3+20,
+	parameter C_NUM_QUEUES = 4
 )
 (
     input                        axis_clk,
@@ -17,9 +19,22 @@ module stage #(
     input                        phv_in_valid,
     output  					 stage_ready_out,
 
-    output [PHV_LEN-1:0]         phv_out,
-    output                       phv_out_valid,
-	input                        stage_ready_in,
+    output [PHV_LEN-1:0]         phv_out_0,
+    output                       phv_out_valid_0,
+	input                        phv_fifo_ready_0,
+
+    output [PHV_LEN-1:0]         phv_out_1,
+    output                       phv_out_valid_1,
+	input                        phv_fifo_ready_1,
+
+    output [PHV_LEN-1:0]         phv_out_2,
+    output                       phv_out_valid_2,
+	input                        phv_fifo_ready_2,
+
+    output [PHV_LEN-1:0]         phv_out_3,
+    output                       phv_out_valid_3,
+	input                        phv_fifo_ready_3,
+
 
     //control path
     input [C_S_AXIS_DATA_WIDTH-1:0]			c_s_axis_tdata,
@@ -65,7 +80,8 @@ wire                         lookup2action_action_valid;
 wire [PHV_LEN-1:0]           lookup2action_phv;
 wire                         action2lookup_ready;
 
-
+wire [PHV_LEN-1:0]			phv_out;
+wire						phv_out_valid_from_ae;
 
 key_extract #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
@@ -166,8 +182,8 @@ action_engine #(
 
     //signals output from ALUs
     .phv_out(phv_out),
-    .phv_valid_out(phv_out_valid),
-    .ready_in(stage_ready_in),
+    .phv_valid_out(phv_out_valid_from_ae),
+    .ready_in(phv_fifo_ready_0||phv_fifo_ready_1||phv_fifo_ready_2||phv_fifo_ready_3),
     //control path
     .c_s_axis_tdata(c_s_axis_tdata_2),
 	.c_s_axis_tuser(c_s_axis_tuser_2),
@@ -181,5 +197,20 @@ action_engine #(
 	.c_m_axis_tvalid(c_m_axis_tvalid),
 	.c_m_axis_tlast(c_m_axis_tlast)
 );
+
+// pkt_hdr_vec_next = {pkt_hdr_vec_w[PKT_HDR_LEN-1:145], p_cur_queue_val, pkt_hdr_vec_w[0+:141]}; 
+// position: [141+:4]
+//
+
+assign phv_out_0 = phv_out;
+assign phv_out_1 = phv_out;
+assign phv_out_2 = phv_out;
+assign phv_out_3 = phv_out;
+
+
+assign phv_out_valid_0 = (phv_out[141]==1?1:0) & phv_out_valid_from_ae;
+assign phv_out_valid_1 = (phv_out[142]==1?1:0) & phv_out_valid_from_ae;
+assign phv_out_valid_2 = (phv_out[143]==1?1:0) & phv_out_valid_from_ae;
+assign phv_out_valid_3 = (phv_out[144]==1?1:0) & phv_out_valid_from_ae;
 
 endmodule

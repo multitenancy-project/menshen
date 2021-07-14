@@ -54,7 +54,6 @@ wire [ACT_LEN-1:0] action_wire;
 reg [PHV_LEN-1:0] phv_reg;
 reg [2:0] lookup_state;
 
-(*mark_debug = "true"*) wire [1:0] lookup_state_dbg;
 assign lookup_state_dbg = lookup_state;
 
 wire [11:0] vlan_id;

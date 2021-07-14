@@ -62,6 +62,7 @@ reg [C_NUM_SEGS/2-1:0]						fst_half_tlast_next, snd_half_tlast_next;
 
 reg											fst_half_valid_next, snd_half_valid_next;
 reg vlan_valid_next;
+reg [11:0] vlan_next;
 
 reg [2:0] state, state_next;
 
@@ -85,6 +86,7 @@ always @(*) begin
 	fst_half_valid_next = 0;
 	snd_half_valid_next = 0;
 	vlan_valid_next = 0;
+	vlan_next = vlan;
 
 	// output remaining segs
 	output_fifo_tdata = 0;
@@ -102,7 +104,7 @@ always @(*) begin
 				fst_half_tlast_next[0] = pkt_fifo_tlast;
 
 
-				vlan = pkt_fifo_tdata[116+:12];
+				vlan_next = pkt_fifo_tdata[116+:12];
 				vlan_valid_next = 1;
 
 				if (pkt_fifo_tlast) begin
@@ -226,6 +228,7 @@ always @(posedge clk) begin
 		fst_half_valid <= 0;
 		snd_half_valid <= 0;
 		vlan_valid <= 0;
+		vlan <= 0;
 	end
 	else begin
 		state <= state_next;
@@ -243,6 +246,7 @@ always @(posedge clk) begin
 		fst_half_valid <= fst_half_valid_next;
 		snd_half_valid <= snd_half_valid_next;
 		vlan_valid <= vlan_valid_next;
+		vlan <= vlan_next;
 	end
 end
 

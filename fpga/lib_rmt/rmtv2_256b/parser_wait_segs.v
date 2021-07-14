@@ -37,6 +37,7 @@ localparam	WAIT_1ST_SEG=0,
 reg [2:0]	state, state_next;
 reg [C_NUM_SEGS*C_AXIS_DATA_WIDTH-1:0] tdata_segs_next;
 reg [C_AXIS_TUSER_WIDTH-1:0] tuser_1st_next;
+reg [11:0] vlan_next;
 reg	segs_valid_next, vlan_valid_next;
 
 always @(*) begin
@@ -49,6 +50,7 @@ always @(*) begin
 	segs_valid_next = 0;
 	vlan_valid_next = 0;
 
+	vlan_next = vlan;
 
 	case (state)
 		// at least 2 segs
@@ -57,7 +59,7 @@ always @(*) begin
 				tdata_segs_next[0*C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = s_axis_tdata;
 				tuser_1st_next = s_axis_tuser;
 
-				vlan = s_axis_tdata[116+:12];
+				vlan_next = s_axis_tdata[116+:12];
 				vlan_valid_next = 1;
 			
 				//
@@ -132,6 +134,8 @@ always @(posedge axis_clk) begin
 		tuser_1st <= {C_AXIS_TUSER_WIDTH{1'b0}};
 		segs_valid <= 0;
 		vlan_valid <= 0;
+
+		vlan <= 0;
 	end
 	else begin
 		state <= state_next;
@@ -141,6 +145,8 @@ always @(posedge axis_clk) begin
 
 		segs_valid <= segs_valid_next;
 		vlan_valid <= vlan_valid_next;
+
+		vlan <= vlan_next;
 	end
 end
 

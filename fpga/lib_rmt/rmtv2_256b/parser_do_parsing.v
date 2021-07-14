@@ -505,5 +505,4 @@ parse_act_ram
 	.doutb		(bram_out),
 	.enb		(1'b1) // always set to 1
 );
-
 endmodule

@@ -73,6 +73,14 @@ wire										s_axis_tvalid_f;
 wire										s_axis_tready_f;
 wire										s_axis_tlast_f;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				s_axis_tdata_f_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			s_axis_tkeep_f_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				s_axis_tuser_f_r;
+reg											s_axis_tvalid_f_r;
+reg											s_axis_tready_f_r;
+reg											s_axis_tlast_f_r;
+
+
 //NOTE: filter control packets from data packets.
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_1;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_1;
@@ -252,11 +260,11 @@ phv_parser
 	.axis_clk		(clk),
 	.aresetn		(aresetn),
 	// input slvae axi stream
-	.s_axis_tdata	(s_axis_tdata_f),
-	.s_axis_tuser	(s_axis_tuser_f),
-	.s_axis_tkeep	(s_axis_tkeep_f),
-	.s_axis_tvalid	(s_axis_tvalid_f & s_axis_tready_f),
-	.s_axis_tlast	(s_axis_tlast_f),
+	.s_axis_tdata	(s_axis_tdata_f_r),
+	.s_axis_tuser	(s_axis_tuser_f_r),
+	.s_axis_tkeep	(s_axis_tkeep_f_r),
+	.s_axis_tvalid	(s_axis_tvalid_f_r & s_axis_tready_f),
+	.s_axis_tlast	(s_axis_tlast_f_r),
 	.s_axis_tready	(s_axis_tready_p),
 
 	// output
@@ -584,6 +592,23 @@ out_arb (
 	.s_axis_tready_3				(depar_out_tready[3])
 );
 
+always @(posedge clk) begin
+	if (~aresetn) begin
+		s_axis_tdata_f_r <= 0;
+		s_axis_tuser_f_r <= 0;
+		s_axis_tkeep_f_r <= 0;
+		s_axis_tlast_f_r <= 0;
+		s_axis_tvalid_f_r <= 0;
+	end
+	else begin
+		s_axis_tdata_f_r <= s_axis_tdata_f;
+		s_axis_tuser_f_r <= s_axis_tuser_f;
+		s_axis_tkeep_f_r <= s_axis_tkeep_f;
+		s_axis_tlast_f_r <= s_axis_tlast_f;
+		s_axis_tvalid_f_r <= s_axis_tvalid_f;
+	end
+end
+
 
 always @(posedge clk) begin
 	if (~aresetn) begin
@@ -607,18 +632,6 @@ assign stg0_phv_out_valid_w = stg0_phv_out_valid ;//& ~stg0_phv_out_valid_r;
 assign stg1_phv_out_valid_w = stg1_phv_out_valid ;//& ~stg1_phv_out_valid_r;
 assign stg2_phv_out_valid_w = stg2_phv_out_valid ;//& ~stg2_phv_out_valid_r;
 assign stg3_phv_out_valid_w = stg3_phv_out_valid ;//& ~stg3_phv_out_valid_r;
-
-
-(* mark_debug = "true" *) wire [31:0] phv_con;
-(* mark_debug = "true" *) wire [31:0] phv_con_1;
-(* mark_debug = "true" *) wire [31:0] phv_con_2;
-(* mark_debug = "true" *) wire phv_valid;
-
-assign phv_valid = last_stg_phv_out_valid[0];
-assign phv_con = last_stg_phv_out[0][256+8*16+3*32+:32];
-assign phv_con_1 = last_stg_phv_out[0][256+8*16+2*32+:32];
-assign phv_con_2 = last_stg_phv_out[0][256+8*16+1*32+:32];
-
 
 endmodule
 

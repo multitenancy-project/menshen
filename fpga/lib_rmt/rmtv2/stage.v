@@ -7,7 +7,8 @@ module stage #(
     parameter PHV_LEN = 48*8+32*8+16*8+256,
     parameter KEY_LEN = 48*2+32*2+16*2+1,
     parameter ACT_LEN = 25,
-    parameter KEY_OFF = 6*3+20
+    parameter KEY_OFF = 6*3+20,
+	parameter C_VLANID_WIDTH = 12
 )
 (
     input                        axis_clk,
@@ -16,6 +17,10 @@ module stage #(
     input  [PHV_LEN-1:0]         phv_in,
     input                        phv_in_valid,
     output  					 stage_ready_out,
+
+	input [C_VLANID_WIDTH-1:0]				vlan_in,
+	input									vlan_valid_in,
+	output									vlan_fifo_ready,
 
     output [PHV_LEN-1:0]         phv_out,
     output                       phv_out_valid,
@@ -41,7 +46,6 @@ wire [KEY_LEN-1:0]           key2lookup_key;
 wire                         key2lookup_key_valid;
 wire                         key2lookup_phv_valid;
 wire [PHV_LEN-1:0]           key2lookup_phv;
-wire [KEY_LEN-1:0]           key2lookup_key_mask;
 wire                         lookup2key_ready;
 
 //control path 1 (key2lookup)
@@ -66,6 +70,13 @@ wire [PHV_LEN-1:0]           lookup2action_phv;
 wire                         action2lookup_ready;
 
 
+// vlan fifo wires
+wire [C_VLANID_WIDTH-1:0]	vlan_fifo_out;
+wire						vlan_rd_en;
+wire						vlan_fifo_full, vlan_fifo_empty;
+
+assign vlan_fifo_ready = ~vlan_fifo_full;
+
 
 key_extract #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
@@ -89,7 +100,6 @@ key_extract #(
     .phv_valid_out(key2lookup_phv_valid),
     .key_out_masked(key2lookup_key),
     .key_valid_out(key2lookup_key_valid),
-    .key_mask_out(key2lookup_key_mask),
     .ready_in(lookup2key_ready),
 
     //control path
@@ -121,7 +131,6 @@ lookup_engine #(
 
     //output from key extractor
     .extract_key(key2lookup_key),
-    .extract_mask(key2lookup_key_mask),
     .key_valid(key2lookup_key_valid),
     .phv_valid(key2lookup_phv_valid),
     .phv_in(key2lookup_phv),
@@ -180,6 +189,27 @@ action_engine #(
 	.c_m_axis_tkeep(c_m_axis_tkeep),
 	.c_m_axis_tvalid(c_m_axis_tvalid),
 	.c_m_axis_tlast(c_m_axis_tlast)
+);
+
+
+//======================== fifo modules
+fallthrough_small_fifo #(
+	.WIDTH(C_VLANID_WIDTH),
+	.MAX_DEPTH_BITS(4)
+)
+vlan_fifo (
+	.din					(vlan_in),
+	.wr_en					(vlan_valid_in),
+	//
+	.rd_en					(vlan_fifo_rd),
+	.dout					(vlan_fifo_out),
+	//
+	.full					(),
+	.prog_full				(),
+	.nearly_full			(vlan_fifo_full),
+	.empty					(vlan_fifo_empty),
+	.reset					(~aresetn),
+	.clk					(axis_clk)
 );
 
 endmodule

@@ -62,6 +62,10 @@ module parser_do_parsing #(
 	output reg										parser_valid,
 	output reg [PKT_HDR_LEN-1:0]					pkt_hdr_vec,
 
+	output reg [C_VLANID_WIDTH-1:0]					out_vlan,
+	output reg										out_vlan_valid,
+	input											out_vlan_ready,
+
 	// ctrl path
 	input [C_AXIS_DATA_WIDTH-1:0]					ctrl_s_axis_tdata,
 	input [C_AXIS_TUSER_WIDTH-1:0]					ctrl_s_axis_tuser,
@@ -88,6 +92,10 @@ localparam			IDLE=0,
 reg [PKT_HDR_LEN-1:0]	pkt_hdr_vec_next;
 reg parser_valid_next;
 reg [3:0] state, state_next;
+reg [C_VLANID_WIDTH-1:0]	out_vlan_next;
+reg							out_vlan_valid_next;
+reg							out_vlan_output, out_vlan_output_next;
+reg							out_vlan_exist, out_vlan_exist_next;
 
 wire [159:0] bram_out;
 // parsing actions
@@ -139,6 +147,11 @@ always @(*) begin
 	parser_valid_next = 0;
 	pkt_hdr_vec_next = pkt_hdr_vec;
 	//
+	out_vlan_next = out_vlan;
+	out_vlan_valid_next = 0;
+	out_vlan_exist_next = out_vlan_exist;
+	out_vlan_output_next = out_vlan_output;
+	//
 	val_2B_nxt[0]=val_2B[0];
 	val_2B_nxt[1]=val_2B[1];
 	val_2B_nxt[2]=val_2B[2];
@@ -173,15 +186,44 @@ always @(*) begin
 		IDLE: begin
 			if (!vlan_fifo_empty) begin
 				state_next = WAIT_1CYCLE_RAM;
+
+				out_vlan_next = vlan_id;
+				if (out_vlan_ready) begin
+					out_vlan_valid_next = 1;
+					out_vlan_exist_next = 1;
+					out_vlan_output_next = 1;
+				end
+				else begin
+					out_vlan_exist_next = 1;
+					out_vlan_output_next = 0;
+				end
 			end
 		end
 		WAIT_1CYCLE_RAM: begin
 			state_next = START_SUB_PARSE;
+
+			// out vlan
+			if (out_vlan_exist && !out_vlan_output) begin
+				if (out_vlan_ready) begin
+					out_vlan_valid_next = 1;
+					out_vlan_exist_next = 1;
+					out_vlan_output_next = 1;
+				end
+			end
 		end
 		START_SUB_PARSE: begin
 			if (!segs_fifo_empty) begin
 				sub_parse_act_valid = 10'b1111111111;
 				state_next = FINISH_SUB_PARSE;
+			end
+
+			// out vlan
+			if (out_vlan_exist && !out_vlan_output) begin
+				if (out_vlan_ready) begin
+					out_vlan_valid_next = 1;
+					out_vlan_exist_next = 1;
+					out_vlan_output_next = 1;
+				end
 			end
 		end
 		FINISH_SUB_PARSE: begin
@@ -255,6 +297,11 @@ always @(posedge axis_clk) begin
 		pkt_hdr_vec <= 0;
 		parser_valid <= 0;
 		//
+		out_vlan <= 0;
+		out_vlan_valid <= 0;
+		out_vlan_exist <= 0;
+		out_vlan_output <= 1;
+		//
 		val_2B[0] <= 0;
 		val_2B[1] <= 0;
 		val_2B[2] <= 0;
@@ -285,6 +332,11 @@ always @(posedge axis_clk) begin
 		//
 		pkt_hdr_vec <= pkt_hdr_vec_next;
 		parser_valid <= parser_valid_next;
+		//
+		out_vlan <= out_vlan_next;
+		out_vlan_valid <= out_vlan_next;
+		out_vlan_exist <= out_vlan_exist_next;
+		out_vlan_output <= out_vlan_output_next;
 		//
 		val_2B[0] <= val_2B_nxt[0];
 		val_2B[1] <= val_2B_nxt[1];

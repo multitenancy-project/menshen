@@ -56,7 +56,6 @@ wire [KEY_LEN-1:0]           key2lookup_key;
 wire                         key2lookup_key_valid;
 wire                         key2lookup_phv_valid;
 wire [PHV_LEN-1:0]           key2lookup_phv;
-wire [KEY_LEN-1:0]           key2lookup_key_mask;
 wire                         lookup2key_ready;
 
 //control path 1 (key2lookup)
@@ -105,7 +104,6 @@ key_extract #(
     .phv_valid_out(key2lookup_phv_valid),
     .key_out_masked(key2lookup_key),
     .key_valid_out(key2lookup_key_valid),
-    .key_mask_out(key2lookup_key_mask),
     .ready_in(lookup2key_ready),
 
     //control path
@@ -137,7 +135,6 @@ lookup_engine #(
 
     //output from key extractor
     .extract_key(key2lookup_key),
-    .extract_mask(key2lookup_key_mask),
     .key_valid(key2lookup_key_valid),
     .phv_valid(key2lookup_phv_valid),
     .phv_in(key2lookup_phv),

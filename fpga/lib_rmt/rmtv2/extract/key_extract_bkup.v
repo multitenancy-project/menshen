@@ -23,11 +23,11 @@ module key_extract #(
 	input								vlan_fifo_empty,
 	output reg							vlan_fifo_rd_en,
 
-	// output PHV and key
     output reg [PHV_LEN-1:0]            phv_out,
     output reg                          phv_valid_out,
     output [KEY_LEN-1:0]	            key_out_masked,
     output reg                          key_valid_out,
+    output reg [KEY_LEN-1:0]            key_mask_out,
 	input								ready_in,
 
     //control path
@@ -44,62 +44,36 @@ module key_extract #(
 	output reg								    c_m_axis_tlast
 );
 
-localparam WIDTH_2B = 16;
-localparam WIDTH_4B = 32;
-localparam WIDTH_6B = 48;
+
+integer i;
+
+localparam width_2B = 16;
+localparam width_4B = 32;
+localparam width_6B = 48;
 
 //reg [KEY_LEN-1:0] key_out;
 
 //24 fields to be retrived from the pkt header
-wire [WIDTH_2B-1:0]		cont_2B [0:7];
-wire [WIDTH_4B-1:0]		cont_4B [0:7];
-wire [WIDTH_6B-1:0]		cont_6B [0:7];
+reg [width_2B-1:0]    cont_2B [0:7];
+reg [width_4B-1:0]    cont_4B [0:7];
+reg [width_6B-1:0]    cont_6B [0:7];
+reg [width_2B-1:0]    cont_2B_next [0:7];
+reg [width_4B-1:0]    cont_4B_next [0:7];
+reg [width_6B-1:0]    cont_6B_next [0:7];
+reg [19:0]            com_op;
+reg [19:0]            com_op_next;
 
-wire [19:0]				com_op;
-wire [47:0]				com_op_1, com_op_2;
-wire [47:0]				com_op_1_val, com_op_2_val;
+reg  [47:0]             com_op_1, com_op_1_next;
+reg  [47:0]             com_op_2, com_op_2_next;
+
 //
 wire [KEY_OFF-1:0]      key_offset; // output from RAM
+reg  [KEY_OFF-1:0]      key_offset_r;
 //
 wire [KEY_LEN-1:0]      key_mask_out_w; // output from RAM
+reg  [KEY_LEN-1:0]      key_mask_out_r;
+reg  [KEY_LEN-1:0]      key_mask_out_next;
 //
-
-assign cont_6B[7] = phv_in[PHV_LEN-1            -: WIDTH_6B];
-assign cont_6B[6] = phv_in[PHV_LEN-1-  WIDTH_6B -: WIDTH_6B];
-assign cont_6B[5] = phv_in[PHV_LEN-1-2*WIDTH_6B -: WIDTH_6B];
-assign cont_6B[4] = phv_in[PHV_LEN-1-3*WIDTH_6B -: WIDTH_6B];
-assign cont_6B[3] = phv_in[PHV_LEN-1-4*WIDTH_6B -: WIDTH_6B];
-assign cont_6B[2] = phv_in[PHV_LEN-1-5*WIDTH_6B -: WIDTH_6B];
-assign cont_6B[1] = phv_in[PHV_LEN-1-6*WIDTH_6B -: WIDTH_6B];
-assign cont_6B[0] = phv_in[PHV_LEN-1-7*WIDTH_6B -: WIDTH_6B];
-assign cont_4B[7] = phv_in[PHV_LEN-1-8*WIDTH_6B            -: WIDTH_4B];
-assign cont_4B[6] = phv_in[PHV_LEN-1-8*WIDTH_6B-  WIDTH_4B -: WIDTH_4B];
-assign cont_4B[5] = phv_in[PHV_LEN-1-8*WIDTH_6B-2*WIDTH_4B -: WIDTH_4B];
-assign cont_4B[4] = phv_in[PHV_LEN-1-8*WIDTH_6B-3*WIDTH_4B -: WIDTH_4B];
-assign cont_4B[3] = phv_in[PHV_LEN-1-8*WIDTH_6B-4*WIDTH_4B -: WIDTH_4B];
-assign cont_4B[2] = phv_in[PHV_LEN-1-8*WIDTH_6B-5*WIDTH_4B -: WIDTH_4B];
-assign cont_4B[1] = phv_in[PHV_LEN-1-8*WIDTH_6B-6*WIDTH_4B -: WIDTH_4B];
-assign cont_4B[0] = phv_in[PHV_LEN-1-8*WIDTH_6B-7*WIDTH_4B -: WIDTH_4B];
-assign cont_2B[7] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B            -: WIDTH_2B];
-assign cont_2B[6] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-  WIDTH_2B -: WIDTH_2B];
-assign cont_2B[5] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-2*WIDTH_2B -: WIDTH_2B];
-assign cont_2B[4] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-3*WIDTH_2B -: WIDTH_2B];
-assign cont_2B[3] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-4*WIDTH_2B -: WIDTH_2B];
-assign cont_2B[2] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-5*WIDTH_2B -: WIDTH_2B];
-assign cont_2B[1] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-6*WIDTH_2B -: WIDTH_2B];
-assign cont_2B[0] = phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-7*WIDTH_2B -: WIDTH_2B];
-
-assign com_op = key_offset[0+:20];
-assign com_op_1 = com_op[17]==1? {40'b0, com_op[16:9]} : com_op_1_val;
-assign com_op_1_val = com_op[13:12]==2?cont_6B[com_op[11:9]][7:0]:
-						(com_op[13:12]==1?{16'b0, cont_4B[com_op[11:9]][7:0]}:
-						(com_op[13:12]==0?{32'b0, cont_2B[com_op[11:9]][7:0]}:0));
-
-assign com_op_2 = com_op[8]==1? {40'b0, com_op[7:0]} : com_op_2_val;
-assign com_op_2_val = com_op[4:3]==2?cont_6B[com_op[2:0]][7:0]:
-						(com_op[4:3]==1?{16'b0, cont_4B[com_op[2:0]][7:0]}:
-						(com_op[4:3]==0?{32'b0, cont_2B[com_op[2:0]][7:0]}:0));
-
 
 localparam  IDLE = 0,
 			WAIT_1CLK = 1,
@@ -115,10 +89,6 @@ reg key_valid_out_next;
 reg phv_valid_out_next;
 reg ready_out_next;
 
-wire [11:0] vlan_id;
-assign vlan_id = phv_in[140:129];
-
-assign key_out_masked = key_out&(~key_mask_out_w);
 
 always @(*) begin
 	state_next = state;
@@ -126,52 +96,147 @@ always @(*) begin
 	phv_out_next = phv_out;
 	phv_valid_out_next = 0;
 	key_valid_out_next = 0;
-
 	key_out_next = key_out;
+	key_mask_out_next = key_mask_out;
 	ready_out_next = ready_out;
 
+	cont_6B_next[7] = cont_6B[7];
+    cont_6B_next[6] = cont_6B[6];
+    cont_6B_next[5] = cont_6B[5];
+    cont_6B_next[4] = cont_6B[4];
+    cont_6B_next[3] = cont_6B[3];
+    cont_6B_next[2] = cont_6B[2];
+    cont_6B_next[1] = cont_6B[1];
+    cont_6B_next[0] = cont_6B[0];
+    cont_4B_next[7] = cont_4B[7];
+    cont_4B_next[6] = cont_4B[6];
+    cont_4B_next[5] = cont_4B[5];
+    cont_4B_next[4] = cont_4B[4];
+    cont_4B_next[3] = cont_4B[3];
+    cont_4B_next[2] = cont_4B[2];
+    cont_4B_next[1] = cont_4B[1];
+    cont_4B_next[0] = cont_4B[0];
+    cont_2B_next[7] = cont_2B[7];
+    cont_2B_next[6] = cont_2B[6];
+    cont_2B_next[5] = cont_2B[5];
+    cont_2B_next[4] = cont_2B[4];
+    cont_2B_next[3] = cont_2B[3];
+    cont_2B_next[2] = cont_2B[2];
+    cont_2B_next[1] = cont_2B[1];
+    cont_2B_next[0] = cont_2B[0];
+    com_op_next  = com_op;
+
+	com_op_1_next = com_op_1;
+	com_op_2_next = com_op_2;
+
 	case (state)
-		// IDLE: begin
-		// 	if (!vlan_fifo_empty) begin
-		// 		state_next = WAIT_1CLK;
-		// 	end
-		// end
-		// WAIT_1CLK: begin // wait com_op
-		// 	state_next = WAIT_2CLK;
-		// end
+		IDLE: begin
+			if (!vlan_fifo_empty) begin
+				state_next = WAIT_1CLK;
+			end
+		end
+		WAIT_1CLK: begin // wait com_op
+			state_next = WAIT_2CLK;
+		end
 		IDLE: begin
 			if (phv_valid_in) begin
 				ready_out_next = 1'b0;
 				phv_out_next = phv_in;
 
+				cont_6B_next[7] = phv_in[PHV_LEN-1            -: width_6B];
+    			cont_6B_next[6] = phv_in[PHV_LEN-1-  width_6B -: width_6B];
+    			cont_6B_next[5] = phv_in[PHV_LEN-1-2*width_6B -: width_6B];
+    			cont_6B_next[4] = phv_in[PHV_LEN-1-3*width_6B -: width_6B];
+    			cont_6B_next[3] = phv_in[PHV_LEN-1-4*width_6B -: width_6B];
+    			cont_6B_next[2] = phv_in[PHV_LEN-1-5*width_6B -: width_6B];
+    			cont_6B_next[1] = phv_in[PHV_LEN-1-6*width_6B -: width_6B];
+    			cont_6B_next[0] = phv_in[PHV_LEN-1-7*width_6B -: width_6B];
+    			cont_4B_next[7] = phv_in[PHV_LEN-1-8*width_6B           -: width_4B];
+    			cont_4B_next[6] = phv_in[PHV_LEN-1-8*width_6B-  width_4B -: width_4B];
+    			cont_4B_next[5] = phv_in[PHV_LEN-1-8*width_6B-2*width_4B -: width_4B];
+    			cont_4B_next[4] = phv_in[PHV_LEN-1-8*width_6B-3*width_4B -: width_4B];
+    			cont_4B_next[3] = phv_in[PHV_LEN-1-8*width_6B-4*width_4B -: width_4B];
+    			cont_4B_next[2] = phv_in[PHV_LEN-1-8*width_6B-5*width_4B -: width_4B];
+    			cont_4B_next[1] = phv_in[PHV_LEN-1-8*width_6B-6*width_4B -: width_4B];
+    			cont_4B_next[0] = phv_in[PHV_LEN-1-8*width_6B-7*width_4B -: width_4B];
+    			cont_2B_next[7] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B            -: width_2B];
+    			cont_2B_next[6] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-  width_2B -: width_2B];
+    			cont_2B_next[5] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-2*width_2B -: width_2B];
+    			cont_2B_next[4] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-3*width_2B -: width_2B];
+    			cont_2B_next[3] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-4*width_2B -: width_2B];
+    			cont_2B_next[2] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-5*width_2B -: width_2B];
+    			cont_2B_next[1] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-6*width_2B -: width_2B];
+    			cont_2B_next[0] = phv_in[PHV_LEN-1-8*width_6B-8*width_4B-7*width_2B -: width_2B];
 				state_next = WAIT_1CLK;
 			end
 			else begin
 				ready_out_next = 1'b1;
 			end
 		end
-		WAIT_1CLK: begin
+		WAIT_2CLK: begin
+			com_op_next = key_offset[0+:20];
 			state_next = WAIT_3CLK;
 		end
 		WAIT_3CLK: begin
+			if(com_op[17] == 1'b1) begin
+    		    com_op_1_next = {40'b0, com_op[16:9]};
+    		end
+    		else begin
+    		    case(com_op[13:12])
+    		        2'b10: begin
+    		            com_op_1_next = cont_6B[com_op[11:9]][7:0];
+    		        end
+    		        2'b01: begin
+    		            com_op_1_next = {16'b0, cont_4B[com_op[11:9]][7:0]};
+    		        end
+    		        2'b00: begin
+    		            com_op_1_next = {32'b0, cont_2B[com_op[11:9]][7:0]};
+    		        end
+    		    endcase
+    		end
+    		if(com_op[8] == 1'b1) begin
+    		    com_op_2_next = {40'b0, com_op[7:0]};
+    		end
+    		else begin
+    		    case(com_op[4:3])
+    		        2'b10: begin
+    		            com_op_2_next = cont_6B[com_op[2:0]][7:0];
+    		        end
+    		        2'b01: begin
+    		            com_op_2_next = {16'b0, cont_4B[com_op[2:0]][7:0]};
+    		        end
+    		        2'b00: begin
+    		            com_op_2_next = {32'b0, cont_2B[com_op[2:0]][7:0]};
+    		        end
+    		    endcase
+    		end
+
+			state_next = WAIT_4CLK;
+		end
+		WAIT_4CLK: begin
 			if(ready_in) begin
 				key_valid_out_next = 1;
 				phv_valid_out_next = 1;
 				ready_out_next = 1'b1;
+				key_mask_out_next = key_mask_out_r;
 				state_next = IDLE;
 			end
 			else begin
 				key_valid_out_next = 0;
 				phv_valid_out_next = 0;
+				key_mask_out_next = key_mask_out_r;
 				state_next = HALT;
 			end
+			// key_valid_out_next = 1;
+			// phv_valid_out_next = 1;
+			// key_mask_out_next = key_mask_out_r;
 
-            key_out_next[KEY_LEN-1                                     -: WIDTH_6B] = cont_6B[key_offset[KEY_OFF-1     -: 3]];
-            key_out_next[KEY_LEN-1- 1*WIDTH_6B                         -: WIDTH_6B] = cont_6B[key_offset[KEY_OFF-1-1*3 -: 3]];
-            key_out_next[KEY_LEN-1- 2*WIDTH_6B                         -: WIDTH_4B] = cont_4B[key_offset[KEY_OFF-1-2*3 -: 3]];
-            key_out_next[KEY_LEN-1- 2*WIDTH_6B - 1*WIDTH_4B            -: WIDTH_4B] = cont_4B[key_offset[KEY_OFF-1-3*3 -: 3]];
-            key_out_next[KEY_LEN-1- 2*WIDTH_6B - 2*WIDTH_4B            -: WIDTH_2B] = cont_2B[key_offset[KEY_OFF-1-4*3 -: 3]];
-            key_out_next[KEY_LEN-1- 2*WIDTH_6B - 2*WIDTH_4B - WIDTH_2B -: WIDTH_2B] = cont_2B[key_offset[KEY_OFF-1-5*3 -: 3]];
+            key_out_next[KEY_LEN-1                                     -: width_6B] = cont_6B[key_offset_r[KEY_OFF-1     -: 3]];
+            key_out_next[KEY_LEN-1- 1*width_6B                         -: width_6B] = cont_6B[key_offset_r[KEY_OFF-1-1*3 -: 3]];
+            key_out_next[KEY_LEN-1- 2*width_6B                         -: width_4B] = cont_4B[key_offset_r[KEY_OFF-1-2*3 -: 3]];
+            key_out_next[KEY_LEN-1- 2*width_6B - 1*width_4B            -: width_4B] = cont_4B[key_offset_r[KEY_OFF-1-3*3 -: 3]];
+            key_out_next[KEY_LEN-1- 2*width_6B - 2*width_4B            -: width_2B] = cont_2B[key_offset_r[KEY_OFF-1-4*3 -: 3]];
+            key_out_next[KEY_LEN-1- 2*width_6B - 2*width_4B - width_2B -: width_2B] = cont_2B[key_offset_r[KEY_OFF-1-5*3 -: 3]];
 			// comparator
             case(com_op[19:18])
                 2'b00: begin
@@ -187,6 +252,8 @@ always @(*) begin
                     key_out_next[0] = 1'b1;
                 end
             endcase
+
+			//state_next = IDLE;
 		end
 		HALT: begin
 			if(ready_in) begin
@@ -212,8 +279,42 @@ always @(posedge clk) begin
 		phv_valid_out <= 0;
 		key_valid_out <= 0;
 		key_out <= 0;
+		key_mask_out <= 0;
 		ready_out <= 1'b1;
 
+		key_offset_r <= 0;
+
+		com_op_1 <= 0;
+		com_op_2 <= 0;
+		cont_6B[7] <= 0;
+    	cont_6B[6] <= 0;
+    	cont_6B[5] <= 0;
+    	cont_6B[4] <= 0;
+    	cont_6B[3] <= 0;
+    	cont_6B[2] <= 0;
+    	cont_6B[1] <= 0;
+    	cont_6B[0] <= 0;
+    	cont_4B[7] <= 0;
+    	cont_4B[6] <= 0;
+    	cont_4B[5] <= 0;
+    	cont_4B[4] <= 0;
+    	cont_4B[3] <= 0;
+    	cont_4B[2] <= 0;
+    	cont_4B[1] <= 0;
+    	cont_4B[0] <= 0;
+    	cont_2B[7] <= 0;
+    	cont_2B[6] <= 0;
+    	cont_2B[5] <= 0;
+    	cont_2B[4] <= 0;
+    	cont_2B[3] <= 0;
+    	cont_2B[2] <= 0;
+    	cont_2B[1] <= 0;
+    	cont_2B[0] <= 0;
+    	com_op[0]  <= 0;
+    	com_op[1]  <= 0;
+    	com_op[2]  <= 0;
+    	com_op[3]  <= 0;
+    	com_op[4]  <= 0;
 	end
 	else begin
 		state <= state_next;
@@ -222,7 +323,38 @@ always @(posedge clk) begin
 		phv_valid_out <= phv_valid_out_next;
 		key_valid_out <= key_valid_out_next;
 		key_out <= key_out_next;
+		key_mask_out <= key_mask_out_next;
 		ready_out <= ready_out_next;
+
+		key_offset_r <= key_offset;
+		key_mask_out_r <= key_mask_out_w;
+		com_op_1 <= com_op_1_next;
+		com_op_2 <= com_op_2_next;
+		cont_6B[7] <= cont_6B_next[7];
+    	cont_6B[6] <= cont_6B_next[6];
+    	cont_6B[5] <= cont_6B_next[5];
+    	cont_6B[4] <= cont_6B_next[4];
+    	cont_6B[3] <= cont_6B_next[3];
+    	cont_6B[2] <= cont_6B_next[2];
+    	cont_6B[1] <= cont_6B_next[1];
+    	cont_6B[0] <= cont_6B_next[0];
+    	cont_4B[7] <= cont_4B_next[7];
+    	cont_4B[6] <= cont_4B_next[6];
+    	cont_4B[5] <= cont_4B_next[5];
+    	cont_4B[4] <= cont_4B_next[4];
+    	cont_4B[3] <= cont_4B_next[3];
+    	cont_4B[2] <= cont_4B_next[2];
+    	cont_4B[1] <= cont_4B_next[1];
+    	cont_4B[0] <= cont_4B_next[0];
+    	cont_2B[7] <= cont_2B_next[7];
+    	cont_2B[6] <= cont_2B_next[6];
+    	cont_2B[5] <= cont_2B_next[5];
+    	cont_2B[4] <= cont_2B_next[4];
+    	cont_2B[3] <= cont_2B_next[3];
+    	cont_2B[2] <= cont_2B_next[2];
+    	cont_2B[1] <= cont_2B_next[1];
+    	cont_2B[0] <= cont_2B_next[0];
+    	com_op  <= com_op_next;
 	end
 end
 
@@ -239,6 +371,8 @@ reg                 c_wr_en_mask;
 reg [2:0]           c_state;
 
 
+//checkme: mask the key with keymask
+assign key_out_masked = key_out&(~key_mask_out);
 
 localparam IDLE_C = 0,
            PARSE_C = 1,
@@ -727,7 +861,7 @@ generate
             .wea(c_wr_en_off),
 
             //only [3:0] is needed for addressing
-            .addrb(vlan_id[8:4]),
+            .addrb(vlan_fifo_in[8:4]),
             .clkb(clk),
             .doutb(key_offset),
             .enb(1'b1)
@@ -743,7 +877,7 @@ generate
             .wea(c_wr_en_mask),
 
             //only [3:0] is needed for addressing
-            .addrb(vlan_id[8:4]),
+            .addrb(vlan_fifo_in[8:4]),
             .clkb(clk),
             .doutb(key_mask_out_w),
             .enb(1'b1)

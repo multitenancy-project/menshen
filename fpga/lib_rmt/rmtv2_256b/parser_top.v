@@ -28,6 +28,11 @@ module parser_top #(
 	output									s_axis_tready,
 	input									stg_ready_in,
 
+	// output vlan
+	output [C_VLANID_WIDTH-1:0]				out_vlan,
+	output									out_vlan_valid,
+	input									out_vlan_ready,
+
 	// output to different pkt fifo queues (i.e., data cache)
 	output [C_S_AXIS_DATA_WIDTH-1:0]		m_axis_tdata_0,
 	output [C_S_AXIS_TUSER_WIDTH-1:0]		m_axis_tuser_0,
@@ -305,6 +310,11 @@ do_parsing
 	.parser_valid			(parser_valid_w),
 	.pkt_hdr_vec			(pkt_hdr_vec_w),
 
+	.out_vlan				(out_vlan),
+	.out_vlan_valid			(out_vlan_valid),
+	.out_vlan_ready			(out_vlan_ready),
+
+	// control path
 	.ctrl_s_axis_tdata		(ctrl_s_axis_tdata),
 	.ctrl_s_axis_tuser		(ctrl_s_axis_tuser),
 	.ctrl_s_axis_tkeep		(ctrl_s_axis_tkeep),

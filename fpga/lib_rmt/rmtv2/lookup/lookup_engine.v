@@ -16,7 +16,6 @@ module lookup_engine #(
     //output from key extractor
     //output from key extractor
     input [KEY_LEN-1:0]           extract_key,
-    input [KEY_LEN-1:0]           extract_mask,
     input                         key_valid,
 	input 					      phv_valid,
     input [PHV_LEN-1:0]           phv_in,

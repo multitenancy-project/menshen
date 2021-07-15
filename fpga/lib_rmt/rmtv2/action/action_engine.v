@@ -5,7 +5,8 @@ module action_engine #(
     parameter ACT_LEN = 25,
     parameter ACT_ID = 3,
     parameter C_S_AXIS_DATA_WIDTH = 512,
-    parameter C_S_AXIS_TUSER_WIDTH = 128
+    parameter C_S_AXIS_TUSER_WIDTH = 128,
+	parameter C_VLANID_WIDTH = 12
 )(
     input clk,
     input rst_n,
@@ -21,6 +22,10 @@ module action_engine #(
     output reg [PHV_LEN-1:0]      phv_out,
     output reg                    phv_valid_out,
     input                         ready_in,
+	// vlan
+	output reg [C_VLANID_WIDTH-1:0]		vlan_out,
+	output reg							vlan_out_valid,
+	input								vlan_out_ready,
 
     //control path
     input [C_S_AXIS_DATA_WIDTH-1:0]			c_s_axis_tdata,
@@ -249,5 +254,55 @@ always @(posedge clk) begin
 	end
 end
 
+//================================================================
+// vlan out logic
+localparam		IDLE=0,
+				FLUSH_VLAN=1;
+
+reg [C_VLANID_WIDTH-1:0]	vlan_out_next;
+reg							vlan_out_valid_next;
+reg							state, state_next;
+
+
+always @(*) begin
+
+	state_next = state;
+	vlan_out_next = vlan_out;
+	vlan_out_valid_next = 0;
+
+	case (state)
+		IDLE: begin
+			if (phv_valid_in) begin
+				vlan_out_next = phv_in[140:129];
+
+				if (vlan_out_ready) begin
+					vlan_out_valid_next = 1;
+				end
+				else begin
+					state_next = FLUSH_VLAN;
+				end
+			end
+		end
+		FLUSH_VLAN: begin
+			if (vlan_out_ready) begin
+				vlan_out_valid_next = 1;
+				state_next = IDLE;
+			end
+		end
+	endcase
+end
+
+always @(posedge clk) begin
+	if (~rst_n) begin
+		state <= IDLE;
+		vlan_out <= 0;
+		vlan_out_valid <= 0;
+	end
+	else begin
+		state <= state_next;
+		vlan_out <= vlan_out_next;
+		vlan_out_valid <= vlan_out_valid_next;
+	end
+end
 
 endmodule

@@ -239,6 +239,14 @@ always @(*) begin
 			`SUB_PARSE(7)
 			`SUB_PARSE(8)
 			`SUB_PARSE(9)
+			// out vlan
+			if (out_vlan_exist && !out_vlan_output) begin
+				if (out_vlan_ready) begin
+					out_vlan_valid_next = 1;
+					out_vlan_exist_next = 1;
+					out_vlan_output_next = 1;
+				end
+			end
 		end
 		GET_PHV_OUTPUT: begin
 			state_next = OUTPUT;
@@ -334,7 +342,7 @@ always @(posedge axis_clk) begin
 		parser_valid <= parser_valid_next;
 		//
 		out_vlan <= out_vlan_next;
-		out_vlan_valid <= out_vlan_next;
+		out_vlan_valid <= out_vlan_valid_next;
 		out_vlan_exist <= out_vlan_exist_next;
 		out_vlan_output <= out_vlan_output_next;
 		//

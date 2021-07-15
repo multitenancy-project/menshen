@@ -9,7 +9,8 @@ module last_stage #(
     parameter KEY_LEN = 48*2+32*2+16*2+1,
     parameter ACT_LEN = 25,
     parameter KEY_OFF = 6*3+20,
-	parameter C_NUM_QUEUES = 4
+	parameter C_NUM_QUEUES = 4,
+	parameter C_VLANID_WIDTH = 12
 )
 (
     input                        axis_clk,
@@ -18,6 +19,10 @@ module last_stage #(
     input  [PHV_LEN-1:0]         phv_in,
     input                        phv_in_valid,
     output  					 stage_ready_out,
+
+	input [C_VLANID_WIDTH-1:0]				vlan_in,
+	input									vlan_valid_in,
+	output									vlan_fifo_ready,
 
     output [PHV_LEN-1:0]         phv_out_0,
     output                       phv_out_valid_0,
@@ -82,6 +87,13 @@ wire                         action2lookup_ready;
 wire [PHV_LEN-1:0]			phv_out;
 wire						phv_out_valid_from_ae;
 
+// vlan fifo wires
+wire [C_VLANID_WIDTH-1:0]	vlan_fifo_out;
+wire						vlan_fifo_rd_en;
+wire						vlan_fifo_full, vlan_fifo_empty;
+
+assign vlan_fifo_ready = ~vlan_fifo_full;
+
 key_extract #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
     .C_S_AXIS_TUSER_WIDTH(C_S_AXIS_TUSER_WIDTH),
@@ -99,6 +111,10 @@ key_extract #(
     .phv_in(phv_in),
     .phv_valid_in(phv_in_valid),
     .ready_out(stage_ready_out),
+	// vlan
+	.vlan_fifo_in				(vlan_fifo_out),
+	.vlan_fifo_empty			(vlan_fifo_empty),
+	.vlan_fifo_rd_en			(vlan_fifo_rd_en),
 
     .phv_out(key2lookup_phv),
     .phv_valid_out(key2lookup_phv_valid),
@@ -181,6 +197,10 @@ action_engine #(
     .phv_out(phv_out),
     .phv_valid_out(phv_out_valid_from_ae),
     .ready_in(phv_fifo_ready_0||phv_fifo_ready_1||phv_fifo_ready_2||phv_fifo_ready_3),
+	// vlan
+	.vlan_out		(),
+	.vlan_out_valid	(),
+	.vlan_out_ready	(),
     //control path
     .c_s_axis_tdata(c_s_axis_tdata_2),
 	.c_s_axis_tuser(c_s_axis_tuser_2),
@@ -209,5 +229,25 @@ assign phv_out_valid_0 = (phv_out[141]==1?1:0) & phv_out_valid_from_ae;
 assign phv_out_valid_1 = (phv_out[142]==1?1:0) & phv_out_valid_from_ae;
 assign phv_out_valid_2 = (phv_out[143]==1?1:0) & phv_out_valid_from_ae;
 assign phv_out_valid_3 = (phv_out[144]==1?1:0) & phv_out_valid_from_ae;
+
+//======================== fifo modules
+fallthrough_small_fifo #(
+	.WIDTH(C_VLANID_WIDTH),
+	.MAX_DEPTH_BITS(4)
+)
+vlan_fifo (
+	.din					(vlan_in),
+	.wr_en					(vlan_valid_in),
+	//
+	.rd_en					(vlan_fifo_rd_en),
+	.dout					(vlan_fifo_out),
+	//
+	.full					(),
+	.prog_full				(),
+	.nearly_full			(vlan_fifo_full),
+	.empty					(vlan_fifo_empty),
+	.reset					(~aresetn),
+	.clk					(axis_clk)
+);
 
 endmodule

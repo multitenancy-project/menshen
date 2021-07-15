@@ -22,9 +22,13 @@ module stage #(
 	input									vlan_valid_in,
 	output									vlan_fifo_ready,
 
+	//
     output [PHV_LEN-1:0]         phv_out,
     output                       phv_out_valid,
 	input                        stage_ready_in,
+	output [C_VLANID_WIDTH-1:0]				vlan_out,
+	output									vlan_valid_out,
+	input									vlan_out_ready,
 
     //control path
     input [C_S_AXIS_DATA_WIDTH-1:0]			c_s_axis_tdata,
@@ -48,6 +52,11 @@ wire                         key2lookup_phv_valid;
 wire [PHV_LEN-1:0]           key2lookup_phv;
 wire                         lookup2key_ready;
 
+reg [KEY_LEN-1:0]			key2lookup_key_r;
+reg							key2lookup_key_valid_r;
+reg							key2lookup_phv_valid_r;
+reg [PHV_LEN-1:0]			key2lookup_phv_r;
+
 //control path 1 (key2lookup)
 wire [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_1;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		c_s_axis_tkeep_1;
@@ -69,10 +78,37 @@ wire                         lookup2action_action_valid;
 wire [PHV_LEN-1:0]           lookup2action_phv;
 wire                         action2lookup_ready;
 
+reg [ACT_LEN*25-1:0]        lookup2action_action_r;
+reg                         lookup2action_action_valid_r;
+reg [PHV_LEN-1:0]           lookup2action_phv_r;
+
+always @(posedge axis_clk) begin
+	if (~aresetn) begin
+		key2lookup_key_r <= 0;
+		key2lookup_key_valid_r <= 0;
+		key2lookup_phv_valid_r <= 0;
+		key2lookup_phv_r <= 0;
+
+		lookup2action_action_r <= 0;
+		lookup2action_action_valid_r <= 0;
+		lookup2action_phv_r <= 0;
+	end
+	else begin
+		key2lookup_key_r <= key2lookup_key;
+		key2lookup_key_valid_r <= key2lookup_key_valid;
+		key2lookup_phv_valid_r <= key2lookup_phv_valid;
+		key2lookup_phv_r <= key2lookup_phv;
+
+		lookup2action_action_r <= lookup2action_action;
+		lookup2action_action_valid_r <= lookup2action_action_valid;
+		lookup2action_phv_r <= lookup2action_phv;
+	end
+end
+
 
 // vlan fifo wires
 wire [C_VLANID_WIDTH-1:0]	vlan_fifo_out;
-wire						vlan_rd_en;
+wire						vlan_fifo_rd_en;
 wire						vlan_fifo_full, vlan_fifo_empty;
 
 assign vlan_fifo_ready = ~vlan_fifo_full;
@@ -95,6 +131,9 @@ key_extract #(
     .phv_in(phv_in),
     .phv_valid_in(phv_in_valid),
     .ready_out(stage_ready_out),
+	.vlan_fifo_in				(vlan_fifo_out),
+	.vlan_fifo_empty			(vlan_fifo_empty),
+	.vlan_fifo_rd_en			(vlan_fifo_rd_en),
 
     .phv_out(key2lookup_phv),
     .phv_valid_out(key2lookup_phv_valid),
@@ -130,10 +169,10 @@ lookup_engine #(
     .rst_n(aresetn),
 
     //output from key extractor
-    .extract_key(key2lookup_key),
-    .key_valid(key2lookup_key_valid),
-    .phv_valid(key2lookup_phv_valid),
-    .phv_in(key2lookup_phv),
+    .extract_key(key2lookup_key_r),
+    .key_valid(key2lookup_key_valid_r),
+    .phv_valid(key2lookup_phv_valid_r),
+    .phv_in(key2lookup_phv_r),
     .ready_out(lookup2key_ready),
 
     //output to the action engine
@@ -167,16 +206,20 @@ action_engine #(
     .rst_n(aresetn),
 
     //signals from lookup to ALUs
-    .phv_in(lookup2action_phv),
-    .phv_valid_in(lookup2action_action_valid),
-    .action_in(lookup2action_action),
-    .action_valid_in(lookup2action_action_valid),
+    .phv_in(lookup2action_phv_r),
+    .phv_valid_in(lookup2action_action_valid_r),
+    .action_in(lookup2action_action_r),
+    .action_valid_in(lookup2action_action_valid_r),
     .ready_out(action2lookup_ready),
 
     //signals output from ALUs
     .phv_out(phv_out),
     .phv_valid_out(phv_out_valid),
     .ready_in(stage_ready_in),
+	// vlan
+	.vlan_out(vlan_out),
+	.vlan_out_valid(vlan_valid_out),
+	.vlan_out_ready(vlan_out_ready),
     //control path
     .c_s_axis_tdata(c_s_axis_tdata_2),
 	.c_s_axis_tuser(c_s_axis_tuser_2),
@@ -201,7 +244,7 @@ vlan_fifo (
 	.din					(vlan_in),
 	.wr_en					(vlan_valid_in),
 	//
-	.rd_en					(vlan_fifo_rd),
+	.rd_en					(vlan_fifo_rd_en),
 	.dout					(vlan_fifo_out),
 	//
 	.full					(),

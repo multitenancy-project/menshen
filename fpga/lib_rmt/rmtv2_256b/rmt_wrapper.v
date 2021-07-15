@@ -6,7 +6,8 @@ module rmt_wrapper #(
 	// Slave
 	parameter C_S_AXIS_DATA_WIDTH = 256,
 	parameter C_S_AXIS_TUSER_WIDTH = 128,
-	parameter C_NUM_QUEUES = 4
+	parameter C_NUM_QUEUES = 4,
+	parameter C_VLANID_WIDTH = 12
 	// Master
 	// self-defined
 )
@@ -57,13 +58,29 @@ wire								stg3_phv_out_valid;
 wire								stg3_phv_out_valid_w;
 reg									stg3_phv_out_valid_r;
 
+wire [C_VLANID_WIDTH-1:0]			stg0_vlan_in;
+wire								stg0_vlan_valid_in;
+wire								stg0_vlan_fifo_ready;
+wire [C_VLANID_WIDTH-1:0]			stg0_vlan_out;
+wire								stg0_vlan_valid_out;
+wire								stg1_vlan_fifo_ready;
+wire [C_VLANID_WIDTH-1:0]			stg1_vlan_out;
+wire								stg1_vlan_valid_out;
+wire								stg2_vlan_fifo_ready;
+wire [C_VLANID_WIDTH-1:0]			stg2_vlan_out;
+wire								stg2_vlan_valid_out;
+wire								stg3_vlan_fifo_ready;
+wire [C_VLANID_WIDTH-1:0]			stg3_vlan_out;
+wire								stg3_vlan_valid_out;
+wire								last_stg_vlan_fifo_ready;
+
 // back pressure signals
 wire s_axis_tready_p;
 wire stg0_ready;
 wire stg1_ready;
 wire stg2_ready;
 wire stg3_ready;
-wire stg4_ready;
+wire last_stg_ready;
 
 //NOTE: to filter out packets other than UDP/IP.
 wire [C_S_AXIS_DATA_WIDTH-1:0]				s_axis_tdata_f;
@@ -268,8 +285,11 @@ phv_parser
 	.s_axis_tready	(s_axis_tready_p),
 
 	// output
-	.parser_valid	(stg0_phv_in_valid),
-	.pkt_hdr_vec	(stg0_phv_in),
+	.parser_valid		(stg0_phv_in_valid),
+	.pkt_hdr_vec		(stg0_phv_in),
+	.out_vlan			(stg0_vlan_in),
+	.out_vlan_valid		(stg0_vlan_valid_in),
+	.out_vlan_ready		(stg0_vlan_fifo_ready),
 	// 
 	.stg_ready_in	(stg0_ready),
 
@@ -329,6 +349,13 @@ stage0
 	// input
     .phv_in					(stg0_phv_in),
     .phv_in_valid			(stg0_phv_in_valid_w),
+	.vlan_in				(stg0_vlan_in),
+	.vlan_valid_in			(stg0_vlan_valid_in),
+	.vlan_fifo_ready		(stg0_vlan_fifo_ready),
+	// output
+	.vlan_out				(stg0_vlan_out),
+	.vlan_valid_out			(stg0_vlan_valid_out),
+	.vlan_out_ready			(stg1_vlan_fifo_ready),
 	// output
     .phv_out				(stg0_phv_out),
     .phv_out_valid			(stg0_phv_out_valid),
@@ -363,6 +390,13 @@ stage1
 	// input
     .phv_in					(stg0_phv_out),
     .phv_in_valid			(stg0_phv_out_valid_w),
+	.vlan_in				(stg0_vlan_out),
+	.vlan_valid_in			(stg0_vlan_valid_out),
+	.vlan_fifo_ready		(stg1_vlan_fifo_ready),
+	// output
+	.vlan_out				(stg1_vlan_out),
+	.vlan_valid_out			(stg1_vlan_valid_out),
+	.vlan_out_ready			(stg2_vlan_fifo_ready),
 	// output
     .phv_out				(stg1_phv_out),
     .phv_out_valid			(stg1_phv_out_valid),
@@ -397,6 +431,13 @@ stage2
 	// input
     .phv_in					(stg1_phv_out),
     .phv_in_valid			(stg1_phv_out_valid_w),
+	.vlan_in				(stg1_vlan_out),
+	.vlan_valid_in			(stg1_vlan_valid_out),
+	.vlan_fifo_ready		(stg2_vlan_fifo_ready),
+	// output
+	.vlan_out				(stg2_vlan_out),
+	.vlan_valid_out			(stg2_vlan_valid_out),
+	.vlan_out_ready			(stg3_vlan_fifo_ready),
 	// output
     .phv_out				(stg2_phv_out),
     .phv_out_valid			(stg2_phv_out_valid),
@@ -430,12 +471,19 @@ stage3
 	// input
     .phv_in					(stg2_phv_out),
     .phv_in_valid			(stg2_phv_out_valid_w),
+	.vlan_in				(stg2_vlan_out),
+	.vlan_valid_in			(stg2_vlan_valid_out),
+	.vlan_fifo_ready		(stg3_vlan_fifo_ready),
+	// output
+	.vlan_out				(stg3_vlan_out),
+	.vlan_valid_out			(stg3_vlan_valid_out),
+	.vlan_out_ready			(last_stg_vlan_fifo_ready),
 	// output
     .phv_out				(stg3_phv_out),
     .phv_out_valid			(stg3_phv_out_valid),
 	// back-pressure signals
 	.stage_ready_out		(stg3_ready),
-	.stage_ready_in			(stg4_ready),
+	.stage_ready_in			(last_stg_ready),
 
 	// control path
     .c_s_axis_tdata(ctrl_s_axis_tdata_5),
@@ -464,8 +512,11 @@ stage4
 	// input
     .phv_in					(stg3_phv_out),
     .phv_in_valid			(stg3_phv_out_valid_w),
+	.vlan_in				(stg3_vlan_out),
+	.vlan_valid_in			(stg3_vlan_valid_out),
+	.vlan_fifo_ready		(last_stg_vlan_fifo_ready),
 	// back-pressure signals
-	.stage_ready_out		(stg4_ready),
+	.stage_ready_out		(last_stg_ready),
 	// output
     .phv_out_0				(last_stg_phv_out[0]),
     .phv_out_valid_0		(last_stg_phv_out_valid[0]),

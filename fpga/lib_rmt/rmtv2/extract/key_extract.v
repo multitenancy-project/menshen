@@ -113,10 +113,9 @@ reg [PHV_LEN-1:0] phv_out_next;
 reg [KEY_LEN-1:0] key_out, key_out_next; 
 reg key_valid_out_next; 
 reg phv_valid_out_next;
+reg vlan_fifo_rd_en_next;
 reg ready_out_next;
 
-wire [11:0] vlan_id;
-assign vlan_id = phv_in[140:129];
 
 assign key_out_masked = key_out&(~key_mask_out_w);
 
@@ -126,37 +125,36 @@ always @(*) begin
 	phv_out_next = phv_out;
 	phv_valid_out_next = 0;
 	key_valid_out_next = 0;
+	vlan_fifo_rd_en_next = 0;
 
 	key_out_next = key_out;
 	ready_out_next = ready_out;
 
 	case (state)
-		// IDLE: begin
-		// 	if (!vlan_fifo_empty) begin
-		// 		state_next = WAIT_1CLK;
-		// 	end
-		// end
-		// WAIT_1CLK: begin // wait com_op
-		// 	state_next = WAIT_2CLK;
-		// end
 		IDLE: begin
+			if (!vlan_fifo_empty) begin
+				state_next = WAIT_1CLK;
+			end
+		end
+		WAIT_1CLK: begin // wait com_op
+			state_next = WAIT_2CLK;
+		end
+		WAIT_2CLK: begin
 			if (phv_valid_in) begin
 				ready_out_next = 1'b0;
 				phv_out_next = phv_in;
 
-				state_next = WAIT_1CLK;
+				state_next = WAIT_3CLK;
 			end
 			else begin
 				ready_out_next = 1'b1;
 			end
 		end
-		WAIT_1CLK: begin
-			state_next = WAIT_3CLK;
-		end
 		WAIT_3CLK: begin
 			if(ready_in) begin
 				key_valid_out_next = 1;
 				phv_valid_out_next = 1;
+				vlan_fifo_rd_en_next = 1;
 				ready_out_next = 1'b1;
 				state_next = IDLE;
 			end
@@ -192,6 +190,7 @@ always @(*) begin
 			if(ready_in) begin
 				key_valid_out_next = 1;
 				phv_valid_out_next = 1;
+				vlan_fifo_rd_en_next = 1;
 				ready_out_next = 1'b1;
 				state_next = IDLE;
 			end
@@ -211,9 +210,9 @@ always @(posedge clk) begin
 		phv_out <= 0;
 		phv_valid_out <= 0;
 		key_valid_out <= 0;
+		vlan_fifo_rd_en <= 0;
 		key_out <= 0;
 		ready_out <= 1'b1;
-
 	end
 	else begin
 		state <= state_next;
@@ -221,6 +220,7 @@ always @(posedge clk) begin
 		phv_out <= phv_out_next;
 		phv_valid_out <= phv_valid_out_next;
 		key_valid_out <= key_valid_out_next;
+		vlan_fifo_rd_en <= vlan_fifo_rd_en_next;
 		key_out <= key_out_next;
 		ready_out <= ready_out_next;
 	end
@@ -727,7 +727,7 @@ generate
             .wea(c_wr_en_off),
 
             //only [3:0] is needed for addressing
-            .addrb(vlan_id[8:4]),
+            .addrb(vlan_fifo_in[8:4]),
             .clkb(clk),
             .doutb(key_offset),
             .enb(1'b1)
@@ -743,7 +743,7 @@ generate
             .wea(c_wr_en_mask),
 
             //only [3:0] is needed for addressing
-            .addrb(vlan_id[8:4]),
+            .addrb(vlan_fifo_in[8:4]),
             .clkb(clk),
             .doutb(key_mask_out_w),
             .enb(1'b1)

@@ -232,7 +232,7 @@ end
 
 fallthrough_small_fifo #(
 	.WIDTH(C_NUM_SEGS*C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH),
-	.MAX_DEPTH_BITS(5)
+	.MAX_DEPTH_BITS(4)
 )
 segs_fifo (
 	.din					({tdata_segs_in, tuser_1st_in}),
@@ -251,7 +251,7 @@ segs_fifo (
 
 fallthrough_small_fifo #(
 	.WIDTH(C_VLANID_WIDTH),
-	.MAX_DEPTH_BITS(5)
+	.MAX_DEPTH_BITS(4)
 )
 vlan_fifo (
 	.din					(vlan_in),

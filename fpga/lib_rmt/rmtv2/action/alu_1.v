@@ -50,7 +50,7 @@ always @(*) begin
 	case (state)
 		IDLE_S: begin
 			if (action_valid) begin
-				state_next = WAIT1_S;
+				state_next = WAIT3_S;
 				case(action_in[24:21])
             	    4'b0001, 4'b1001: begin
             	        container_out_r = operand_1_in + operand_2_in;

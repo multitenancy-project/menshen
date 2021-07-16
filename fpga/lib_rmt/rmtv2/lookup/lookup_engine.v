@@ -7,13 +7,13 @@ module lookup_engine #(
     parameter PHV_LEN = 48*8+32*8+16*8+256,
     parameter KEY_LEN = 48*2+32*2+16*2+5,
     parameter ACT_LEN = 625,
-    parameter LOOKUP_ID = 2
+    parameter LOOKUP_ID = 2,
+	parameter C_VLANID_WIDTH = 12
 )
 (
     input clk,
     input rst_n,
 
-    //output from key extractor
     //output from key extractor
     input [KEY_LEN-1:0]           extract_key,
     input                         key_valid,
@@ -26,6 +26,11 @@ module lookup_engine #(
     output reg                    action_valid,
     output reg [PHV_LEN-1:0]      phv_out, 
 	input						  ready_in,
+
+	// output vlan to ALU vlan fifo
+	output reg [C_VLANID_WIDTH-1:0]		act_vlan_out,
+	output reg							act_vlan_valid_out,
+	input								act_vlan_ready,
 
 
     //control path
@@ -44,7 +49,7 @@ module lookup_engine #(
 );
 
 /********intermediate variables declared here********/
-wire [7:0]  match_addr;
+wire [3:0]  match_addr;
 wire        match;
 
 wire [ACT_LEN-1:0] action_wire;
@@ -52,8 +57,6 @@ wire [ACT_LEN-1:0] action_wire;
 
 reg [PHV_LEN-1:0] phv_reg;
 reg [2:0] lookup_state;
-
-assign lookup_state_dbg = lookup_state;
 
 wire [11:0] vlan_id;
 
@@ -66,7 +69,9 @@ localparam IDLE_S = 3'd0,
            WAIT1_S = 3'd1,
            WAIT2_S = 3'd2,
            TRANS_S = 3'd3,
-		   HALT_S = 3'd4;
+		   HALT_S = 3'd4,
+		   EMPTY1_S = 3'd5,
+		   OUTPUT_S = 3'd6;
 
 always @(posedge clk or negedge rst_n) begin
 
@@ -76,6 +81,8 @@ always @(posedge clk or negedge rst_n) begin
         lookup_state <= IDLE_S;
         action <= 0;
         phv_out <= 0;
+		act_vlan_out <= 0;
+		act_vlan_valid_out <= 0;
 		ready_out <= 1'b1;
     end
 
@@ -84,9 +91,14 @@ always @(posedge clk or negedge rst_n) begin
             IDLE_S: begin
                 //wait 3 cycles
                 action_valid <= 1'b0;
+				act_vlan_valid_out <= 0;
                 if(key_valid == 1'b1) begin
 					ready_out <= 1'b0;
                     phv_reg <= phv_in;
+					act_vlan_out <= vlan_id;
+					if (act_vlan_ready) begin
+						act_vlan_valid_out <= 1;
+					end
                     lookup_state <= WAIT1_S;
                 end
                 else begin
@@ -96,19 +108,35 @@ always @(posedge clk or negedge rst_n) begin
             end
 
             WAIT1_S: begin
+				act_vlan_valid_out <= 0;
                 //TCAM missed
                 if(match == 1'b0) begin
 
                     action <= 625'h3f; //0x3f represents default action
-                    action_valid <= 1'b1;
                     phv_out <= phv_reg;
-                    lookup_state <= IDLE_S;
+                    lookup_state <= EMPTY1_S;
                 end
                 //TCAM hit
                 else begin
                     lookup_state <= WAIT2_S;
                 end
             end
+
+			EMPTY1_S: begin
+				lookup_state <= OUTPUT_S;
+			end
+
+			OUTPUT_S: begin
+				if (ready_in) begin
+					action_valid <= 1'b1;
+					ready_out <= 1'b1;
+					lookup_state <= IDLE_S;
+				end
+				else begin
+					action_valid <= 1'b0;
+					lookup_state <= HALT_S;
+				end
+			end
 
             //wait a cycle for action to come out;
             WAIT2_S: begin
@@ -141,9 +169,10 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+//======================================================================
 
-
-
+wire [204:0] dbg_wire;
+assign dbg_wire = {vlan_id[3:0], vlan_id[11:4], extract_key};
 /****control path*****/
 wire [7:0]          mod_id; //module ID
 //4'b0 for tcam entry;

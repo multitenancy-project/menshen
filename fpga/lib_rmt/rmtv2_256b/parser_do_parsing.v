@@ -140,7 +140,6 @@ wire [15:0] val_2B_swapped [0:7];
 `SWAP_BYTE_ORDER(6)
 `SWAP_BYTE_ORDER(7)
 
-
 always @(*) begin
 	state_next = state;
 	//

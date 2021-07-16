@@ -22,6 +22,10 @@ module action_engine #(
     output reg [PHV_LEN-1:0]      phv_out,
     output reg                    phv_valid_out,
     input                         ready_in,
+	// vlan input from lookup module
+	input [C_VLANID_WIDTH-1:0]			act_vlan_fifo_in,
+	input								act_vlan_fifo_valid_in,
+	output								act_vlan_fifo_ready,
 	// vlan
 	output reg [C_VLANID_WIDTH-1:0]		vlan_out,
 	output reg							vlan_out_valid,
@@ -65,10 +69,17 @@ wire [ACT_LEN*25-1:0]       alu_in_action;
 wire                        alu_in_action_valid;
 
 wire                        alu_ready_out;
+// alu fifo
+wire [C_VLANID_WIDTH-1:0]	act_vlan_fifo_out;
+wire						act_vlan_fifo_rd_en;
+wire						act_vlan_fifo_empty;
+wire						act_vlan_fifo_full;
+
+assign act_vlan_fifo_ready = ~act_vlan_fifo_full;
 
 /********intermediate variables declared here********/
 
-/********IPs instancilzed here*********/
+/********IPs instancilized here*********/
 
 wire [width_6B-1:0]			output_6B[0:7];
 wire [width_4B-1:0]			output_4B[0:7];
@@ -166,7 +177,10 @@ alu_2 #(
     .operand_2_in(alu_in_4B_2[(7+1) * width_4B -1 -: width_4B]),
     .operand_3_in(alu_in_4B_3[(7+1) * width_4B -1 -: width_4B]),
     .ready_out(alu_ready_out),
-    .vlan_id(vlan_id),
+	//
+    .vlan_id(act_vlan_fifo_out),
+	.act_vlan_fifo_rd_en(act_vlan_fifo_rd_en),
+	.act_vlan_fifo_empty(act_vlan_fifo_empty),
     //output to form PHV
     .container_out(output_4B[7]),
     .container_out_valid(),
@@ -304,5 +318,24 @@ always @(posedge clk) begin
 		vlan_out_valid <= vlan_out_valid_next;
 	end
 end
-
+//================================================================
+// fifo
+fallthrough_small_fifo #(
+	.WIDTH(C_VLANID_WIDTH),
+	.MAX_DEPTH_BITS(2)
+)
+vlan_fifo (
+	.din					(act_vlan_fifo_in),
+	.wr_en					(act_vlan_fifo_valid_in),
+	//
+	.rd_en					(act_vlan_fifo_rd_en),
+	.dout					(act_vlan_fifo_out),
+	//
+	.full					(),
+	.prog_full				(),
+	.nearly_full			(act_vlan_fifo_full),
+	.empty					(act_vlan_fifo_empty),
+	.reset					(~rst_n),
+	.clk					(clk)
+);
 endmodule

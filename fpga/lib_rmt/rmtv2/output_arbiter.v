@@ -75,7 +75,7 @@ generate
 		out_arb_queues
 		fallthrough_small_fifo #(
 			.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_DATA_WIDTH/8+C_AXIS_TUSER_WIDTH+1),
-			.MAX_DEPTH_BITS(5)
+			.MAX_DEPTH_BITS(4)
 		) out_arb_fifo (
 			.dout			({fifo_out_tdata[i], fifo_out_tuser[i], fifo_out_tkeep[i], fifo_out_tlast[i]}),
 			.rd_en			(rd_en[i]),

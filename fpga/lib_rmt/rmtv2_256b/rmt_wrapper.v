@@ -36,28 +36,31 @@ module rmt_wrapper #(
 /*=================================================*/
 localparam PKT_VEC_WIDTH = (6+4+2)*8*8+256;
 // 
-wire								stg0_phv_in_valid;
-wire								stg0_phv_in_valid_w;
-reg									stg0_phv_in_valid_r;
 wire [PKT_VEC_WIDTH-1:0]			stg0_phv_in;
+wire								stg0_phv_in_valid;
 // stage-related
 wire [PKT_VEC_WIDTH-1:0]			stg0_phv_out;
 wire								stg0_phv_out_valid;
-wire								stg0_phv_out_valid_w;
-reg									stg0_phv_out_valid_r;
 wire [PKT_VEC_WIDTH-1:0]			stg1_phv_out;
 wire								stg1_phv_out_valid;
-wire								stg1_phv_out_valid_w;
-reg									stg1_phv_out_valid_r;
 wire [PKT_VEC_WIDTH-1:0]			stg2_phv_out;
 wire								stg2_phv_out_valid;
-wire								stg2_phv_out_valid_w;
-reg									stg2_phv_out_valid_r;
 wire [PKT_VEC_WIDTH-1:0]			stg3_phv_out;
 wire								stg3_phv_out_valid;
-wire								stg3_phv_out_valid_w;
-reg									stg3_phv_out_valid_r;
 
+reg [PKT_VEC_WIDTH-1:0]				stg0_phv_in_d1;
+reg [PKT_VEC_WIDTH-1:0]				stg0_phv_out_d1;
+reg [PKT_VEC_WIDTH-1:0]				stg1_phv_out_d1;
+reg [PKT_VEC_WIDTH-1:0]				stg2_phv_out_d1;
+reg [PKT_VEC_WIDTH-1:0]				stg3_phv_out_d1;
+
+reg									stg0_phv_in_valid_d1;
+reg									stg0_phv_out_valid_d1;
+reg									stg1_phv_out_valid_d1;
+reg									stg2_phv_out_valid_d1;
+reg									stg3_phv_out_valid_d1;
+
+//
 wire [C_VLANID_WIDTH-1:0]			stg0_vlan_in;
 wire								stg0_vlan_valid_in;
 wire								stg0_vlan_fifo_ready;
@@ -347,8 +350,8 @@ stage0
     .aresetn				(aresetn),
 
 	// input
-    .phv_in					(stg0_phv_in),
-    .phv_in_valid			(stg0_phv_in_valid_w),
+    .phv_in					(stg0_phv_in_d1),
+    .phv_in_valid			(stg0_phv_in_valid_d1),
 	.vlan_in				(stg0_vlan_in),
 	.vlan_valid_in			(stg0_vlan_valid_in),
 	.vlan_fifo_ready		(stg0_vlan_fifo_ready),
@@ -388,8 +391,8 @@ stage1
     .aresetn				(aresetn),
 
 	// input
-    .phv_in					(stg0_phv_out),
-    .phv_in_valid			(stg0_phv_out_valid_w),
+    .phv_in					(stg0_phv_out_d1),
+    .phv_in_valid			(stg0_phv_out_valid_d1),
 	.vlan_in				(stg0_vlan_out),
 	.vlan_valid_in			(stg0_vlan_valid_out),
 	.vlan_fifo_ready		(stg1_vlan_fifo_ready),
@@ -429,8 +432,8 @@ stage2
     .aresetn				(aresetn),
 
 	// input
-    .phv_in					(stg1_phv_out),
-    .phv_in_valid			(stg1_phv_out_valid_w),
+    .phv_in					(stg1_phv_out_d1),
+    .phv_in_valid			(stg1_phv_out_valid_d1),
 	.vlan_in				(stg1_vlan_out),
 	.vlan_valid_in			(stg1_vlan_valid_out),
 	.vlan_fifo_ready		(stg2_vlan_fifo_ready),
@@ -469,8 +472,8 @@ stage3
     .aresetn				(aresetn),
 
 	// input
-    .phv_in					(stg2_phv_out),
-    .phv_in_valid			(stg2_phv_out_valid_w),
+    .phv_in					(stg2_phv_out_d1),
+    .phv_in_valid			(stg2_phv_out_valid_d1),
 	.vlan_in				(stg2_vlan_out),
 	.vlan_valid_in			(stg2_vlan_valid_out),
 	.vlan_fifo_ready		(stg3_vlan_fifo_ready),
@@ -510,8 +513,8 @@ stage4
     .aresetn				(aresetn),
 
 	// input
-    .phv_in					(stg3_phv_out),
-    .phv_in_valid			(stg3_phv_out_valid_w),
+    .phv_in					(stg3_phv_out_d1),
+    .phv_in_valid			(stg3_phv_out_valid_d1),
 	.vlan_in				(stg3_vlan_out),
 	.vlan_valid_in			(stg3_vlan_valid_out),
 	.vlan_fifo_ready		(last_stg_vlan_fifo_ready),
@@ -663,26 +666,32 @@ end
 
 always @(posedge clk) begin
 	if (~aresetn) begin
-		stg0_phv_in_valid_r <= 0;
-		stg0_phv_out_valid_r <= 0;
-		stg1_phv_out_valid_r <= 0;
-		stg2_phv_out_valid_r <= 0;
-		stg3_phv_out_valid_r <= 0;
+		stg0_phv_in_valid_d1 <= 0;
+		stg0_phv_out_valid_d1 <= 0;
+		stg1_phv_out_valid_d1 <= 0;
+		stg2_phv_out_valid_d1 <= 0;
+		stg3_phv_out_valid_d1 <= 0;
+
+		stg0_phv_in_d1 <= 0;
+		stg0_phv_out_d1 <= 0;
+		stg1_phv_out_d1 <= 0;
+		stg2_phv_out_d1 <= 0;
+		stg3_phv_out_d1 <= 0;
 	end
 	else begin
-		stg0_phv_in_valid_r <= stg0_phv_in_valid;
-		stg0_phv_out_valid_r <= stg0_phv_out_valid;
-		stg1_phv_out_valid_r <= stg1_phv_out_valid;
-		stg2_phv_out_valid_r <= stg2_phv_out_valid;
-		stg3_phv_out_valid_r <= stg3_phv_out_valid;
+		stg0_phv_in_valid_d1 <= stg0_phv_in_valid;
+		stg0_phv_out_valid_d1 <= stg0_phv_out_valid;
+		stg1_phv_out_valid_d1 <= stg1_phv_out_valid;
+		stg2_phv_out_valid_d1 <= stg2_phv_out_valid;
+		stg3_phv_out_valid_d1 <= stg3_phv_out_valid;
+
+		stg0_phv_in_d1 <= stg0_phv_in;
+		stg0_phv_out_d1 <= stg0_phv_out;
+		stg1_phv_out_d1 <= stg1_phv_out;
+		stg2_phv_out_d1 <= stg2_phv_out;
+		stg3_phv_out_d1 <= stg3_phv_out;
 	end
 end
-
-assign stg0_phv_in_valid_w = stg0_phv_in_valid ;//& ~stg0_phv_in_valid_r;
-assign stg0_phv_out_valid_w = stg0_phv_out_valid ;//& ~stg0_phv_out_valid_r;
-assign stg1_phv_out_valid_w = stg1_phv_out_valid ;//& ~stg1_phv_out_valid_r;
-assign stg2_phv_out_valid_w = stg2_phv_out_valid ;//& ~stg2_phv_out_valid_r;
-assign stg3_phv_out_valid_w = stg3_phv_out_valid ;//& ~stg3_phv_out_valid_r;
 
 endmodule
 

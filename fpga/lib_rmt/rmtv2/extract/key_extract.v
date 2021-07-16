@@ -59,9 +59,11 @@ wire [19:0]				com_op;
 wire [47:0]				com_op_1, com_op_2;
 wire [47:0]				com_op_1_val, com_op_2_val;
 //
-wire [KEY_OFF-1:0]      key_offset; // output from RAM
+wire [KEY_OFF-1:0]      key_offset_w; // output from RAM
+reg [KEY_OFF-1:0]		key_offset, key_offset_next;
 //
 wire [KEY_LEN-1:0]      key_mask_out_w; // output from RAM
+reg [KEY_LEN-1:0]		key_mask_out, key_mask_out_next;
 //
 
 assign cont_6B[7] = phv_in[PHV_LEN-1            -: WIDTH_6B];
@@ -113,11 +115,10 @@ reg [PHV_LEN-1:0] phv_out_next;
 reg [KEY_LEN-1:0] key_out, key_out_next; 
 reg key_valid_out_next; 
 reg phv_valid_out_next;
-reg vlan_fifo_rd_en_next;
 reg ready_out_next;
 
 
-assign key_out_masked = key_out&(~key_mask_out_w);
+assign key_out_masked = key_out&(~key_mask_out);
 
 always @(*) begin
 	state_next = state;
@@ -125,10 +126,13 @@ always @(*) begin
 	phv_out_next = phv_out;
 	phv_valid_out_next = 0;
 	key_valid_out_next = 0;
-	vlan_fifo_rd_en_next = 0;
+
+	vlan_fifo_rd_en = 0;
 
 	key_out_next = key_out;
 	ready_out_next = ready_out;
+	key_mask_out_next = key_mask_out;
+	key_offset_next = key_offset;
 
 	case (state)
 		IDLE: begin
@@ -143,6 +147,8 @@ always @(*) begin
 			if (phv_valid_in) begin
 				ready_out_next = 1'b0;
 				phv_out_next = phv_in;
+				key_mask_out_next = key_mask_out_w;
+				key_offset_next = key_offset_w;
 
 				state_next = WAIT_3CLK;
 			end
@@ -154,7 +160,7 @@ always @(*) begin
 			if(ready_in) begin
 				key_valid_out_next = 1;
 				phv_valid_out_next = 1;
-				vlan_fifo_rd_en_next = 1;
+				vlan_fifo_rd_en = 1;
 				ready_out_next = 1'b1;
 				state_next = IDLE;
 			end
@@ -190,7 +196,7 @@ always @(*) begin
 			if(ready_in) begin
 				key_valid_out_next = 1;
 				phv_valid_out_next = 1;
-				vlan_fifo_rd_en_next = 1;
+				vlan_fifo_rd_en = 1;
 				ready_out_next = 1'b1;
 				state_next = IDLE;
 			end
@@ -210,9 +216,11 @@ always @(posedge clk) begin
 		phv_out <= 0;
 		phv_valid_out <= 0;
 		key_valid_out <= 0;
-		vlan_fifo_rd_en <= 0;
 		key_out <= 0;
 		ready_out <= 1'b1;
+
+		key_mask_out <= 0;
+		key_offset <= 0;
 	end
 	else begin
 		state <= state_next;
@@ -220,9 +228,11 @@ always @(posedge clk) begin
 		phv_out <= phv_out_next;
 		phv_valid_out <= phv_valid_out_next;
 		key_valid_out <= key_valid_out_next;
-		vlan_fifo_rd_en <= vlan_fifo_rd_en_next;
 		key_out <= key_out_next;
 		ready_out <= ready_out_next;
+
+		key_mask_out <= key_mask_out_next;
+		key_offset <= key_offset_next;
 	end
 end
 
@@ -476,7 +486,7 @@ generate
             //only [3:0] is needed for addressing
             .addrb(vlan_fifo_in[8:4]),
             .clkb(clk),
-            .doutb(key_offset),
+            .doutb(key_offset_w),
             .enb(1'b1)
         );
 
@@ -729,7 +739,7 @@ generate
             //only [3:0] is needed for addressing
             .addrb(vlan_fifo_in[8:4]),
             .clkb(clk),
-            .doutb(key_offset),
+            .doutb(key_offset_w),
             .enb(1'b1)
         );
 
@@ -750,5 +760,8 @@ generate
         );
     end
 endgenerate
+
+//==========================================================
+
 
 endmodule

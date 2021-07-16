@@ -114,6 +114,11 @@ wire						vlan_fifo_full, vlan_fifo_empty;
 assign vlan_fifo_ready = ~vlan_fifo_full;
 
 
+//
+wire [C_VLANID_WIDTH-1:0]	act_vlan_out;
+wire						act_vlan_out_valid;
+wire						act_vlan_ready;
+
 key_extract #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
     .C_S_AXIS_TUSER_WIDTH(C_S_AXIS_TUSER_WIDTH),
@@ -180,6 +185,10 @@ lookup_engine #(
     .action_valid(lookup2action_action_valid),
     .phv_out(lookup2action_phv),
     .ready_in(action2lookup_ready),
+	//
+	.act_vlan_out				(act_vlan_out),
+	.act_vlan_valid_out			(act_vlan_out_valid),
+	.act_vlan_ready				(act_vlan_ready),
 
     //control path
     .c_s_axis_tdata(c_s_axis_tdata_1),
@@ -216,6 +225,9 @@ action_engine #(
     .phv_out(phv_out),
     .phv_valid_out(phv_out_valid),
     .ready_in(stage_ready_in),
+	.act_vlan_fifo_in			(act_vlan_out),
+	.act_vlan_fifo_valid_in		(act_vlan_out_valid),
+	.act_vlan_fifo_ready		(act_vlan_ready),
 	// vlan
 	.vlan_out(vlan_out),
 	.vlan_out_valid(vlan_valid_out),
@@ -238,7 +250,7 @@ action_engine #(
 //======================== fifo modules
 fallthrough_small_fifo #(
 	.WIDTH(C_VLANID_WIDTH),
-	.MAX_DEPTH_BITS(4)
+	.MAX_DEPTH_BITS(2)
 )
 vlan_fifo (
 	.din					(vlan_in),

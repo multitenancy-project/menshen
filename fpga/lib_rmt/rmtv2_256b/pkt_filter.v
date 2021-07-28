@@ -295,15 +295,4 @@ always @(posedge clk) begin
 	end
 end
 
-// debug
-(* mark_debug="true" *) wire[3:0] dbg_state;
-(* mark_debug="true" *) wire[31:0] dbg_ctrl_data;
-(* mark_debug="true" *) wire dbg_in_ready, dbg_out_ready;
-
-
-assign dbg_state = state;
-assign dbg_in_ready = m_axis_tready;
-assign dbg_out_ready = s_axis_tready;
-assign dbg_ctrl_data = ctrl_m_axis_tdata[255-:32];
-
 endmodule

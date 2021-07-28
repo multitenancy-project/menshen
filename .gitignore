@@ -12,3 +12,11 @@ xvlog*
 
 tb_demo.v
 *.bit
+*.xml
+hbs/
+ip_user_files/
+*.log
+*.jou
+xgui/
+data/
+ip_proj/

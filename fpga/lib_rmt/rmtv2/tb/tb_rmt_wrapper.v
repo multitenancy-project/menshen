@@ -33,7 +33,6 @@ wire								    m_axis_tvalid;
 reg										m_axis_tready;
 wire									m_axis_tlast;
 
-assign s_axis_tready = 1'b1;
 
 //clk signal
 localparam CYCLE = 10;
@@ -61,194 +60,224 @@ initial begin
     s_axis_tuser <= 128'h0;
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
-    #CYCLE;
-    s_axis_tdata <= {64'hffffffffffffffff,64'hffffffff81000002,16'h0002,143'b0, 8'h11, 72'b0, 16'h0008, 128'hfffffffffffffff}; 
+    #(3*CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000001001355541c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'h0;
+    s_axis_tuser <= 128'h00000000000000000000000000010042;
     s_axis_tvalid <= 1'b1;
     s_axis_tlast <= 1'b0;
     #CYCLE
-    s_axis_tdata <= {64'hefffffffffffffff,64'hffffffffffffffff,384'hfffffffffffffffffffff}; 
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'h0;
-    s_axis_tvalid <= 1'b1;
-    s_axis_tlast <= 1'b0;
-    #CYCLE
-    s_axis_tdata <= {64'hdfffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'h0;
-    s_axis_tvalid <= 1'b1;
-    s_axis_tlast <= 1'b0;
-    #CYCLE
-    s_axis_tdata <= {64'hcfffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004; 
+    s_axis_tkeep <= 64'h0000000000000003;
     s_axis_tuser <= 128'h0;
     s_axis_tvalid <= 1'b1;
     s_axis_tlast <= 1'b1;
-    #(CYCLE)
-    s_axis_tdata <= 512'b0; 
-    s_axis_tkeep <= 64'h0;
-    s_axis_tuser <= 128'h0;
-    s_axis_tvalid <= 1'b0;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(3*CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000002001351531c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010042;
+    s_axis_tvalid <= 1'b1;
     s_axis_tlast <= 1'b0;
+    #CYCLE
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000404; 
+    s_axis_tkeep <= 64'h0000000000000003;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(3*CYCLE)
+    s_axis_tdata <= 512'h0000000000000000000000000000000300134d521c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010042;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000804; 
+    s_axis_tkeep <= 64'h0000000000000003;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(3*CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000004001349511c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010042;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c04; 
+    s_axis_tkeep <= 64'h0000000000000003;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
     #(10*CYCLE)
 
-    // s_axis_tdata <= {64'hffffffffffffffff,64'hffffffffffffffff,159'b0, 8'h11, 72'b0, 16'h0008, 128'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b0;
-    // #CYCLE
-    // s_axis_tdata <= {64'hefffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b0;
-    // #CYCLE
-    // s_axis_tdata <= {64'hdfffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b0;
-    // #CYCLE
-    // s_axis_tdata <= {64'hcfffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b1;
-
-    #(CYCLE)
-    s_axis_tdata <= 512'b0; 
-    s_axis_tkeep <= 64'h0;
-    s_axis_tuser <= 128'h0;
-    s_axis_tvalid <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000010000902f2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010054;
+    s_axis_tvalid <= 1'b1;
     s_axis_tlast <= 1'b0;
-
-    #(10*CYCLE);
-    // s_axis_tdata <= {64'hffffffffffffffff,64'hffffffffffffffff,159'b0, 8'h11, 72'b0, 16'h0008, 128'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b0;
-    // #CYCLE
-    // s_axis_tdata <= {64'hefffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b0;
-    // #CYCLE
-    // s_axis_tdata <= {64'hdfffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b0;
-    // #CYCLE
-    // s_axis_tdata <= {64'hcfffffffffffffff,64'hffffffffffffffff,384'b0}; 
-    // s_axis_tkeep <= 64'hffffffffffffffff;
-    // s_axis_tuser <= 128'h0;
-    // s_axis_tvalid <= 1'b1;
-    // s_axis_tlast <= 1'b1;
-
     #(CYCLE)
-    s_axis_tdata <= 512'b0; 
-    s_axis_tkeep <= 64'h0;
+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000270e250d230c910ba108; 
+    s_axis_tkeep <= 64'h00000000000fffff;
     s_axis_tuser <= 128'h0;
-    s_axis_tvalid <= 1'b0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000010005902a2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010054;
+    s_axis_tvalid <= 1'b1;
     s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000270e250d230c910ba108; 
+    s_axis_tkeep <= 64'h00000000000fffff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h0000000000000000000000000000000100014f5e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010045;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000; 
+    s_axis_tkeep <= 64'h000000000000001f;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000010f0117ea3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000010059;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000080ffff0000ffffffffffffffffffffffffffffffffffffffff; 
+    s_axis_tkeep <= 64'h0000000001ffffff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000275683400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h0000000000000000000000000001005a;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000a00100000000000000000000000000000000000000001000; 
+    s_axis_tkeep <= 64'h0000000003ffffff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000000f02e83c6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h0000000000000000000000000001008f;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c003008007808c0200001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700; 
+    s_axis_tkeep <= 64'h0000000000007fff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000001000245683400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h0000000000000000000000000001005a;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000d00000000000000000000000000000000000000000001000; 
+    s_axis_tkeep <= 64'h0000000003ffffff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(30*CYCLE)
+    s_axis_tdata <= 512'h000000000000000000000000000000010f02e93b6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h0000000000000000000000000001008f;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c003008007808c0100001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b0;
+    #(CYCLE)
+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700; 
+    s_axis_tkeep <= 64'h0000000000007fff;
+    s_axis_tuser <= 128'h0;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(40*CYCLE)
+    s_axis_tdata <= 512'h000000000000000004000000020000000d009a201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000000040;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
+    #(5*CYCLE)
+    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
+    s_axis_tkeep <= 64'hffffffffffffffff;
+    s_axis_tuser <= 128'h00000000000000000000000000000040;
+    s_axis_tvalid <= 1'b1;
+    s_axis_tlast <= 1'b1;
+	#CYCLE
+	s_axis_tdata <= 0;
+	s_axis_tkeep <= 0;
+	s_axis_tuser <= 0;
+	s_axis_tvalid <= 1'b0;
+	s_axis_tlast <= 1'b0;
 
     #(40*CYCLE);
 end
-
-//NOTE: 512 test cases
-initial begin
-    #(2*CYCLE); //after the rst_n, start the test
-    #(5) //posedge of clk    
-    /*
-        set up the key extract table
-    */
-    s_axis_tdata <= {128'b0, 4'b0010, 4'b0, 8'b10, 368'b0};
-    s_axis_tdata[143:128] <= 16'h0008;
-    s_axis_tdata[223:216] <= 8'h11;
-    s_axis_tdata[335:320] <= 16'hf1f2;
-    //mod id
-    s_axis_tdata[368+:8] <= 8'h0;
-    //resv
-    s_axis_tdata[380+:4] <= 4'b0;
-    //index
-    s_axis_tdata[384+:8] <= 8'h0;
-
-    s_axis_tvalid <= 1'b1;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-    #(CYCLE)
-
-    s_axis_tdata <= {494'b0,18'hffff};
-    s_axis_tvalid <= 1'b0;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-
-    #CYCLE
-
-    s_axis_tdata <= {494'b0,18'heeeffff};
-    s_axis_tvalid <= 1'b1;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-
-    #(CYCLE)
-    s_axis_tdata <= {494'b0,18'hffff};
-    s_axis_tvalid <= 1'b1;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-
-    #(CYCLE)
-    s_axis_tdata <= {494'b0,18'hffff};
-    s_axis_tvalid <= 1'b1;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b1;
-
-    #(CYCLE)
-    s_axis_tdata <= {494'b0,18'hffff};
-    s_axis_tvalid <= 1'b0;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-
-    #(3*CYCLE)
-    s_axis_tdata <= {128'b0, 4'b0001, 4'b0, 5'b00000, 3'b001, 368'b0};
-    s_axis_tdata[143:128] <= 16'h0008;
-    s_axis_tdata[223:216] <= 8'h11;
-    s_axis_tdata[335:320] <= 16'hf1f2;
-    //mod id
-    s_axis_tdata[368+:8] <= 8'b01;
-    //resv
-    s_axis_tdata[380+:4] <= 4'b1;
-    s_axis_tvalid <= 1'b1;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-    #(CYCLE)
-    s_axis_tdata <= {494'b0,18'hffff};
-    s_axis_tvalid <= 1'b1;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b1;
-
-    #(CYCLE)
-    s_axis_tdata <= 512'b0;
-    s_axis_tvalid <= 1'b0;
-    s_axis_tkeep <= 64'hffffffffffffffff;
-    s_axis_tuser <= 128'b0;
-    s_axis_tlast <= 1'b0;
-    
-    #(20*CYCLE);
-
-end
-
 
 rmt_wrapper #(
 	.C_S_AXI_DATA_WIDTH(),

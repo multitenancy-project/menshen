@@ -62,6 +62,10 @@ wire [11:0] vlan_id;
 
 assign vlan_id = phv_in[140:129];
 
+wire [204:0] dbg_input;
+
+assign dbg_input = {vlan_id[3:0], vlan_id[11:4], extract_key};
+
 /********intermediate variables declared here********/
 
 //here, the output should be controlled.
@@ -171,8 +175,9 @@ end
 
 //======================================================================
 
-wire [204:0] dbg_wire;
-assign dbg_wire = {vlan_id[3:0], vlan_id[11:4], extract_key};
+
+
+//======================================================================
 /****control path*****/
 wire [7:0]          mod_id; //module ID
 //4'b0 for tcam entry;
@@ -196,13 +201,9 @@ reg [204:0]         cam_entry_reg;
 reg [2:0]           c_state;
 
 /****for 256b exclusively*****/
-reg [C_S_AXIS_DATA_WIDTH-1:0]       c_m_axis_tdata_r;
-reg [C_S_AXIS_TUSER_WIDTH-1:0]      c_m_axis_tuser_r;
-reg [C_S_AXIS_DATA_WIDTH/8-1:0]     c_m_axis_tkeep_r;
 reg                                 c_m_axis_tvalid_r;
 reg                                 c_m_axis_tlast_r;
 
-reg [C_S_AXIS_DATA_WIDTH-1:0]       tcam_data_val;
 
 localparam IDLE_C = 0,
            PARSE_C = 1,

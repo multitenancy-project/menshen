@@ -2,9 +2,9 @@
 
 
 module depar_wait_segs #(
-	parameter C_AXIS_DATA_WIDTH = 256,
-	parameter C_AXIS_TUSER_WIDTH = 128,
-	parameter C_NUM_SEGS = 4)
+	parameter C_AXIS_DATA_WIDTH = 512,
+	parameter C_AXIS_TUSER_WIDTH = 128
+)
 (
 	input									clk,
 	input									aresetn,
@@ -25,16 +25,16 @@ module depar_wait_segs #(
 	output reg [11:0]									vlan,
 	output reg											vlan_valid,
 	
-	output reg [C_AXIS_DATA_WIDTH*C_NUM_SEGS/2-1:0]		fst_half_tdata,
-	output reg [C_AXIS_TUSER_WIDTH*C_NUM_SEGS/2-1:0]	fst_half_tuser,
-	output reg [C_AXIS_DATA_WIDTH/8*C_NUM_SEGS/2-1:0]	fst_half_tkeep,
-	output reg [C_NUM_SEGS/2-1:0]						fst_half_tlast,
+	output reg [C_AXIS_DATA_WIDTH-1:0]					fst_half_tdata,
+	output reg [C_AXIS_TUSER_WIDTH-1:0]					fst_half_tuser,
+	output reg [C_AXIS_DATA_WIDTH/8-1:0]				fst_half_tkeep,
+	output reg											fst_half_tlast,
 	output reg											fst_half_valid,
 
-	output reg [C_AXIS_DATA_WIDTH*C_NUM_SEGS/2-1:0]		snd_half_tdata,
-	output reg [C_AXIS_TUSER_WIDTH*C_NUM_SEGS/2-1:0]	snd_half_tuser,
-	output reg [C_AXIS_DATA_WIDTH/8*C_NUM_SEGS/2-1:0]	snd_half_tkeep,
-	output reg [C_NUM_SEGS/2-1:0]						snd_half_tlast,
+	output reg [C_AXIS_DATA_WIDTH-1:0]					snd_half_tdata,
+	output reg [C_AXIS_TUSER_WIDTH-1:0]					snd_half_tuser,
+	output reg [C_AXIS_DATA_WIDTH/8-1:0]				snd_half_tkeep,
+	output reg											snd_half_tlast,
 	output reg											snd_half_valid,
 
 	// output remaining segs to FIFO
@@ -59,12 +59,12 @@ reg [C_AXIS_DATA_WIDTH/8-1:0]				output_fifo_tkeep_next;
 reg											output_fifo_tlast_next;
 reg											output_fifo_valid_next;
 
-reg [C_AXIS_DATA_WIDTH*C_NUM_SEGS/2-1:0]	fst_half_tdata_next, snd_half_tdata_next;
-reg [C_AXIS_TUSER_WIDTH*C_NUM_SEGS/2-1:0]	fst_half_tuser_next, snd_half_tuser_next;
-reg [C_AXIS_DATA_WIDTH/8*C_NUM_SEGS/2-1:0]	fst_half_tkeep_next, snd_half_tkeep_next;
-reg [C_NUM_SEGS/2-1:0]						fst_half_tlast_next, snd_half_tlast_next;
+reg [C_AXIS_DATA_WIDTH-1:0]		fst_half_tdata_next, snd_half_tdata_next;
+reg [C_AXIS_TUSER_WIDTH-1:0]	fst_half_tuser_next, snd_half_tuser_next;
+reg [C_AXIS_DATA_WIDTH/8-1:0]	fst_half_tkeep_next, snd_half_tkeep_next;
+reg								fst_half_tlast_next, snd_half_tlast_next;
 
-reg											fst_half_valid_next, snd_half_valid_next;
+reg								fst_half_valid_next, snd_half_valid_next;
 reg vlan_valid_next;
 reg [11:0] vlan_next;
 
@@ -102,11 +102,10 @@ always @(*) begin
 	case (state)
 		WAIT_FIRST_SEG: begin
 			if (!pkt_fifo_empty) begin
-				fst_half_tdata_next[0+:C_AXIS_DATA_WIDTH] = pkt_fifo_tdata;
-				fst_half_tuser_next[0+:C_AXIS_TUSER_WIDTH] = pkt_fifo_tuser;
-				fst_half_tkeep_next[0+:C_AXIS_DATA_WIDTH/8] = pkt_fifo_tkeep;
-				fst_half_tlast_next[0] = pkt_fifo_tlast;
-
+				fst_half_tdata_next = pkt_fifo_tdata;
+				fst_half_tuser_next = pkt_fifo_tuser;
+				fst_half_tkeep_next = pkt_fifo_tkeep;
+				fst_half_tlast_next = pkt_fifo_tlast;
 
 				vlan_next = pkt_fifo_tdata[116+:12];
 				vlan_valid_next = 1;
@@ -120,42 +119,20 @@ always @(*) begin
 					end
 				end
 				else begin
-					pkt_fifo_rd_en = 1;
-					state_next = WAIT_SECOND_SEG;
+					if (fst_half_fifo_ready) begin
+						pkt_fifo_rd_en = 1;
+						fst_half_valid_next = 1;
+						state_next = WAIT_SECOND_SEG;
+					end
 				end
 			end
 		end
 		WAIT_SECOND_SEG: begin
 			if (!pkt_fifo_empty) begin
-				fst_half_tdata_next[C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = pkt_fifo_tdata;
-				fst_half_tuser_next[C_AXIS_TUSER_WIDTH+:C_AXIS_TUSER_WIDTH] = pkt_fifo_tuser;
-				fst_half_tkeep_next[C_AXIS_DATA_WIDTH/8+:C_AXIS_DATA_WIDTH/8] = pkt_fifo_tkeep;
-				fst_half_tlast_next[1] = pkt_fifo_tlast;
-
-
-				if (pkt_fifo_tlast) begin
-					if (fst_half_fifo_ready && snd_half_fifo_ready) begin
-						pkt_fifo_rd_en = 1;
-						fst_half_valid_next = 1;
-						snd_half_valid_next = 1;
-						state_next = WAIT_FIRST_SEG;
-					end
-				end
-				else begin
-					if (fst_half_fifo_ready) begin
-						pkt_fifo_rd_en = 1;
-						fst_half_valid_next = 1;
-						state_next = WAIT_THIRD_SEG;
-					end
-				end
-			end
-		end
-		WAIT_THIRD_SEG: begin
-			if (!pkt_fifo_empty) begin
-				snd_half_tdata_next[0+:C_AXIS_DATA_WIDTH] = pkt_fifo_tdata;
-				snd_half_tuser_next[0+:C_AXIS_TUSER_WIDTH] = pkt_fifo_tuser;
-				snd_half_tkeep_next[0+:C_AXIS_DATA_WIDTH/8] = pkt_fifo_tkeep;
-				snd_half_tlast_next[0] = pkt_fifo_tlast;
+				snd_half_tdata_next = pkt_fifo_tdata;
+				snd_half_tuser_next = pkt_fifo_tuser;
+				snd_half_tkeep_next = pkt_fifo_tkeep;
+				snd_half_tlast_next = pkt_fifo_tlast;
 
 
 				if (pkt_fifo_tlast) begin
@@ -163,27 +140,6 @@ always @(*) begin
 						pkt_fifo_rd_en = 1;
 						snd_half_valid_next = 1;
 						state_next = WAIT_FIRST_SEG;
-					end
-				end
-				else begin
-					pkt_fifo_rd_en = 1;
-					state_next = WAIT_FOURTH_SEG;
-				end
-			end
-		end
-		WAIT_FOURTH_SEG: begin
-			if (!pkt_fifo_empty) begin
-				snd_half_tdata_next[C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = pkt_fifo_tdata;
-				snd_half_tuser_next[C_AXIS_TUSER_WIDTH+:C_AXIS_TUSER_WIDTH] = pkt_fifo_tuser;
-				snd_half_tkeep_next[C_AXIS_DATA_WIDTH/8+:C_AXIS_DATA_WIDTH/8] = pkt_fifo_tkeep;
-				snd_half_tlast_next[1] = pkt_fifo_tlast;
-
-
-				if (pkt_fifo_tlast) begin
-					if (snd_half_fifo_ready) begin
-						pkt_fifo_rd_en = 1;
-						snd_half_valid_next = 1; 
-						state_next = WAIT_FIRST_SEG; 
 					end
 				end
 				else begin
@@ -267,3 +223,4 @@ always @(posedge clk) begin
 end
 
 endmodule
+

@@ -1,143 +1,80 @@
-
 `timescale 1ns / 1ps
 
+
+
 module sub_parser #(
-    //for 100g MAC, the AXIS width is 512b
-	parameter PARSE_ACT_RAM_WIDTH = 167,
-    parameter C_PARSE_ACTION_LEN = 13,
-    parameter HDR_FIELD_LEN = 1024,
-    parameter VAL_LEN = 48
-    )(
-    input									axis_clk,
-	input									aresetn,
+	parameter PKTS_HDR_LEN = 1024,
+	parameter PARSE_ACT_LEN = 16,
+	parameter VAL_OUT_LEN = 48
+)
+(
+	input				clk,
+	input				aresetn,
 
-	// input slvae axi stream
-	input [HDR_FIELD_LEN-1:0]               pkt_hdr_field,
-    input                                   pkt_hdr_field_valid,
+	input						parse_act_valid,
+	input [PARSE_ACT_LEN-1:0]	parse_act,
 
-    input  [C_PARSE_ACTION_LEN-1:0]         parse_action,
-    input                                   parse_action_valid_in,
+	input [PKTS_HDR_LEN-1:0]	pkts_hdr,
 
-	// output
-	output reg   							val_valid_out,
-	output reg [VAL_LEN-1:0]     		    val_out,
-    output reg [1:0]                        val_out_select,
-    output reg [2:0]                        val_seq_select
+	output reg					val_out_valid,
+	output reg [VAL_OUT_LEN-1:0]	val_out,
+	output reg [1:0]			val_out_type,
+	output reg [2:0]			val_out_seq
 );
 
 
-reg [HDR_FIELD_LEN-1:0] pkt_hdr_field_reg;
+reg [VAL_OUT_LEN-1:0]		val_out_nxt;
+reg							val_out_valid_nxt;
+reg [1:0]					val_out_type_nxt;
+reg [2:0]					val_out_seq_nxt;
 
-always @(posedge axis_clk or negedge aresetn) begin
-    if(~aresetn) begin
-        val_valid_out <= 0;
-        val_out <= 0;
-        val_out_select <= 0;
-        pkt_hdr_field_reg <= 0;
-        val_seq_select <= 0;
-    end
+always @(*) begin
+	val_out_valid_nxt = 0;
+	val_out_nxt = val_out;
+	val_out_type_nxt = val_out_type;
+	val_out_seq_nxt = val_out_seq;
 
-    else begin
-        case(pkt_hdr_field_valid)
-            1'b1: begin
-                val_valid_out <= 1'b1;
-                val_seq_select <= parse_action[3:1];
-                case({parse_action[5:4],parse_action[0]})
-                    3'b011: begin
-                        val_out_select <= 2'b01;
-                        case(parse_action[3:1])
-                            0 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		1 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		2 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		3 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		4 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		5 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		6 : begin
-				    			val_out[15:0]<= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-				    		7 : begin
-				    			val_out[15:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:16];
-				    		end
-                        endcase
-                    end
-                    3'b101: begin
-                        val_out_select <= 2'b10;
-                        case(parse_action[3:1])
-                            0 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		1 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		2 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		3 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		4 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		5 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		6 : begin
-				    			val_out[31:0]<= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-				    		7 : begin
-				    			val_out[31:0] <= pkt_hdr_field[(parse_action[12:6])*8 +:32];
-				    		end
-                        endcase
-                    end
-                    3'b111: begin
-                        val_out_select <= 2'b11;
-                        case(parse_action[3:1])
-                            0 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		1 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		2 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		3 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		4 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		5 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		6 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-				    		7 : begin
-				    			val_out <= pkt_hdr_field[(parse_action[12:6])*8 +:48];
-				    		end
-                        endcase
-                    end
-					default:  val_out_select <= 2'b0;
-                endcase
-            end
-            default: begin
-                val_valid_out <= 1'b0;
-            end
-        endcase
-    end
+	if (parse_act_valid) begin
+		val_out_valid_nxt = 1;
+		val_out_seq_nxt = parse_act[3:1];
+		
+		case({parse_act[5:4], parse_act[0]})
+			// 2B
+			3'b011: begin
+				val_out_type_nxt = 2'b01;
+				val_out_nxt[15:0] = pkts_hdr[(parse_act[12:6])*8 +: 16];
+			end
+			// 4B
+			3'b101: begin
+				val_out_type_nxt = 2'b10;
+				val_out_nxt[31:0] = pkts_hdr[(parse_act[12:6])*8 +: 32];
+			end
+			// 6B
+			3'b111: begin
+				val_out_type_nxt = 2'b11;
+				val_out_nxt[47:0] = pkts_hdr[(parse_act[12:6])*8 +: 48];
+			end
+			default: begin
+				val_out_type_nxt = 0;
+				val_out_nxt = 0;
+			end
+		endcase
+	end
+end
+
+always @(posedge clk) begin
+	if (~aresetn) begin
+		val_out_valid <= 0;
+		val_out <= 0;
+		val_out_type <= 0;
+		val_out_seq <= 0;
+	end
+	else begin
+		val_out_valid <= val_out_valid_nxt;
+		val_out <= val_out_nxt;
+		val_out_type <= val_out_type_nxt;
+		val_out_seq <= val_out_seq_nxt;
+	end
 end
 
 

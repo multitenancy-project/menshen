@@ -59,11 +59,17 @@ lappend SYN_FILES lib/pcie/rtl/pulse_merge.v
 lappend SYN_FILES lib_rmt/rmtv2/rmt_wrapper.v
 lappend SYN_FILES lib_rmt/rmtv2/pkt_filter.v
 lappend SYN_FILES lib_rmt/rmtv2/cookie.v
-lappend SYN_FILES lib_rmt/rmtv2/parser.v
+lappend SYN_FILES lib_rmt/rmtv2/parser_top.v
+lappend SYN_FILES lib_rmt/rmtv2/parser_wait_segs.v
+lappend SYN_FILES lib_rmt/rmtv2/parser_do_parsing.v
 lappend SYN_FILES lib_rmt/rmtv2/sub_parser.v
-lappend SYN_FILES lib_rmt/rmtv2/deparser.v
+lappend SYN_FILES lib_rmt/rmtv2/deparser_top.v
+lappend SYN_FILES lib_rmt/rmtv2/depar_wait_segs.v
+lappend SYN_FILES lib_rmt/rmtv2/depar_do_deparsing.v
 lappend SYN_FILES lib_rmt/rmtv2/sub_deparser.v
 lappend SYN_FILES lib_rmt/rmtv2/stage.v
+lappend SYN_FILES lib_rmt/rmtv2/last_stage.v
+lappend SYN_FILES lib_rmt/rmtv2/output_arbiter.v
 lappend SYN_FILES lib_rmt/rmtv2/action/action_engine.v
 lappend SYN_FILES lib_rmt/rmtv2/action/alu_1.v
 lappend SYN_FILES lib_rmt/rmtv2/action/alu_2.v
@@ -94,6 +100,7 @@ lappend IP_TCL_FILES ip/rmt/fifo_generator_512b.tcl
 lappend IP_TCL_FILES ip/rmt/fifo_generator_705b.tcl
 lappend IP_TCL_FILES ip/rmt/parse_act_ram_ip.tcl
 lappend IP_TCL_FILES ip/rmt/page_tbl_16w_32d.tcl
+lappend IP_TCL_FILES ip/rmt/fifo.tcl
 
 
 #############################

@@ -247,6 +247,8 @@ action_engine #(
 );
 
 
+wire [31:0] dbg_val;
+assign dbg_val = phv_out[256+16*8+96+:32];
 //======================== fifo modules
 fallthrough_small_fifo #(
 	.WIDTH(C_VLANID_WIDTH),

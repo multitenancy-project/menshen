@@ -2077,6 +2077,13 @@ generate
         wire [PORTS_PER_IF-1:0] rx_ptp_ts_valid;
         wire [PORTS_PER_IF-1:0] rx_ptp_ts_ready;
 
+		// assign tx_axis_tdata = rx_axis_tdata;
+		// assign tx_axis_tkeep = rx_axis_tkeep;
+		// assign tx_axis_tvalid = rx_axis_tvalid;
+		// assign tx_axis_tready = rx_axis_tready;
+		// assign tx_axis_tlast = rx_axis_tlast;
+		// assign tx_axis_tuser = rx_axis_tuser;
+
         interface #(
             .PORTS(PORTS_PER_IF),
             .DMA_ADDR_WIDTH(PCIE_ADDR_WIDTH),

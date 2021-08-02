@@ -2004,9 +2004,9 @@ if (RMT_TX_ENABLE) begin
     (
     	.clk(clk),		// axis clk
     	.aresetn(~rst),	
-        // .vlan_drop_flags(vlan_drop_flags),
-        // .cookie_val(cookie_val),
-        // .ctrl_token(ctrl_token),
+        .vlan_drop_flags(vlan_drop_flags),
+        .cookie_val(cookie_val),
+        .ctrl_token(ctrl_token),
 
     	// input Slave AXI Stream
     	.s_axis_tdata(tx_axis_tdata_int_2),

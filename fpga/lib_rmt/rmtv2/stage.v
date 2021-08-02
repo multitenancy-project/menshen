@@ -246,7 +246,6 @@ action_engine #(
 	.c_m_axis_tlast(c_m_axis_tlast)
 );
 
-
 wire [31:0] dbg_val;
 assign dbg_val = phv_out[256+16*8+96+:32];
 //======================== fifo modules

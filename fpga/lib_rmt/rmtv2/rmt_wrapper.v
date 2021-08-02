@@ -119,6 +119,12 @@ wire										s_axis_tvalid_f;
 wire										s_axis_tready_f;
 wire										s_axis_tlast_f;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]			s_axis_tdata_f_reg;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]		s_axis_tkeep_f_reg;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]			s_axis_tuser_f_reg;
+reg										s_axis_tvalid_f_reg;
+reg										s_axis_tlast_f_reg;
+
 //NOTE: filter control packets from data packets.
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_1;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_1;
@@ -331,11 +337,11 @@ phv_parser
 	.axis_clk		(clk),
 	.aresetn		(aresetn),
 	// input slvae axi stream
-	.s_axis_tdata	(s_axis_tdata_f),
-	.s_axis_tuser	(s_axis_tuser_f),
-	.s_axis_tkeep	(s_axis_tkeep_f),
-	.s_axis_tvalid	(s_axis_tvalid_f & s_axis_tready_f),
-	.s_axis_tlast	(s_axis_tlast_f),
+	.s_axis_tdata	(s_axis_tdata_f_reg),
+	.s_axis_tuser	(s_axis_tuser_f_reg),
+	.s_axis_tkeep	(s_axis_tkeep_f_reg),
+	.s_axis_tvalid	(s_axis_tvalid_f_reg & s_axis_tready_f),
+	.s_axis_tlast	(s_axis_tlast_f_reg),
 	.s_axis_tready	(s_axis_tready_p),
 
 	// output
@@ -713,6 +719,12 @@ always @(posedge clk) begin
 		stg1_phv_out_d1 <= 0;
 		stg2_phv_out_d1 <= 0;
 		stg3_phv_out_d1 <= 0;
+		//
+		s_axis_tdata_f_reg <= 0;
+		s_axis_tkeep_f_reg <= 0;
+		s_axis_tuser_f_reg <= 0;
+		s_axis_tlast_f_reg <= 0;
+		s_axis_tvalid_f_reg <= 0;
 	end
 	else begin
 		stg0_phv_in_valid_d1 <= stg0_phv_in_valid;
@@ -726,6 +738,12 @@ always @(posedge clk) begin
 		stg1_phv_out_d1 <= stg1_phv_out;
 		stg2_phv_out_d1 <= stg2_phv_out;
 		stg3_phv_out_d1 <= stg3_phv_out;
+		//
+		s_axis_tdata_f_reg <= s_axis_tdata_f;
+		s_axis_tkeep_f_reg <= s_axis_tkeep_f;
+		s_axis_tuser_f_reg <= s_axis_tuser_f;
+		s_axis_tlast_f_reg <= s_axis_tlast_f;
+		s_axis_tvalid_f_reg <= s_axis_tvalid_f;
 	end
 end
 

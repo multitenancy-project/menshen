@@ -100,8 +100,8 @@ always @(*) begin
 				if ((s_axis_tdata[143:128]==`ETH_TYPE_IPV4) && 
 					(s_axis_tdata[223:216]==`IPPROT_UDP)) begin
 					//checkme: we put the security check here
-					//if(s_axis_tdata[335:320] == `CONTROL_PORT && cookie_w == cookie_val) begin
-					if(s_axis_tdata[335:320] == `CONTROL_PORT) begin
+					if(s_axis_tdata[335:320] == `CONTROL_PORT && cookie_w == cookie_val) begin
+					// if(s_axis_tdata[335:320] == `CONTROL_PORT) begin
 						state_next = FLUSH_CTL;
 						c_switch = 1'b1;
 						//modify token once its true

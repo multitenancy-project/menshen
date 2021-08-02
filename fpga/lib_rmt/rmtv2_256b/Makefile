@@ -1,8 +1,6 @@
 .PHONY: clean
 
 
-run_sim:
-	vivado -mode batch -source tcl/proj_sim.tcl
 run_pktgen:
 	vivado -mode batch -source tcl/proj_pkt_gen.tcl
 
@@ -25,5 +23,4 @@ clean:
 	rm -rfv TProj.hbs
 	rm -rfv project_sim
 	rm -rfv project_synth
-	rm -rfv project_pktgen
 	rm -rfv ip_repo

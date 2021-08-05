@@ -76,17 +76,6 @@ module parser_top #(
 	output									ctrl_m_axis_tlast
 );
 
-wire [C_NUM_SEGS*C_S_AXIS_DATA_WIDTH-1:0]	tdata_segs_in, tdata_segs_fifo_out;
-wire [C_S_AXIS_TUSER_WIDTH-1:0]				tuser_1st_in, tuser_1st_fifo_out;
-wire										segs_fifo_full, segs_fifo_empty;
-wire										vlan_fifo_full, vlan_fifo_empty;
-wire										segs_valid_in, vlan_valid_in;
-
-wire [C_VLANID_WIDTH-1:0]					vlan_in, vlan_fifo_out;
-wire										segs_fifo_rd, vlan_fifo_rd;
-
-assign s_axis_tready = ~segs_fifo_full & ~vlan_fifo_full;
-
 
 wire [3:0] m_axis_tready_queue;
 
@@ -228,45 +217,16 @@ always @(posedge axis_clk) begin
 	end
 end
 
-// ==================================================
 
-fallthrough_small_fifo #(
-	.WIDTH(C_NUM_SEGS*C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH),
-	.MAX_DEPTH_BITS(4)
-)
-segs_fifo (
-	.din					({tdata_segs_in, tuser_1st_in}),
-	.wr_en					(segs_valid_in),
-	//
-	.rd_en					(segs_fifo_rd),
-	.dout					({tdata_segs_fifo_out, tuser_1st_fifo_out}),
-	//
-	.full					(),
-	.prog_full				(),
-	.nearly_full			(segs_fifo_full),
-	.empty					(segs_fifo_empty),
-	.reset					(~aresetn),
-	.clk					(axis_clk)
-);
+wire [C_NUM_SEGS*C_S_AXIS_DATA_WIDTH-1:0]	tdata_segs_out;
+wire [C_S_AXIS_TUSER_WIDTH-1:0]				tuser_1st_out;
+wire [159:0]								bram_out;
+wire										segs_valid_out;
 
-fallthrough_small_fifo #(
-	.WIDTH(C_VLANID_WIDTH),
-	.MAX_DEPTH_BITS(4)
-)
-vlan_fifo (
-	.din					(vlan_in),
-	.wr_en					(vlan_valid_in),
-	//
-	.rd_en					(vlan_fifo_rd),
-	.dout					(vlan_fifo_out),
-	//
-	.full					(),
-	.prog_full				(),
-	.nearly_full			(vlan_fifo_full),
-	.empty					(vlan_fifo_empty),
-	.reset					(~aresetn),
-	.clk					(axis_clk)
-);
+reg [C_NUM_SEGS*C_S_AXIS_DATA_WIDTH-1:0]	tdata_segs_out_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				tuser_1st_out_r;
+reg [159:0]									bram_out_r;
+reg 										segs_valid_out_r;
 
 parser_wait_segs #(
 )
@@ -280,40 +240,13 @@ get_segs
 	.s_axis_tkeep			(s_axis_tkeep),
 	.s_axis_tvalid			(s_axis_tvalid),
 	.s_axis_tlast			(s_axis_tlast),
+	.s_axis_tready			(s_axis_tready),
 
-	.segs_fifo_ready		(!segs_fifo_full),
 	// output
-	.tdata_segs				(tdata_segs_in),
-	.tuser_1st				(tuser_1st_in),
-	.vlan					(vlan_in),
-	.segs_valid				(segs_valid_in),
-	.vlan_valid				(vlan_valid_in)
-);
-
-parser_do_parsing #(
-)
-do_parsing
-(
-	.axis_clk				(axis_clk),
-	.aresetn				(aresetn),
-
-	.tdata_segs				(tdata_segs_fifo_out),
-	.tuser_1st				(tuser_1st_fifo_out),
-	.vlan_id				(vlan_fifo_out),
-	.segs_fifo_empty		(segs_fifo_empty),
-	.vlan_fifo_empty		(vlan_fifo_empty),
-	.stg_ready_in			(stg_ready_in),
-
-	.segs_fifo_rd			(segs_fifo_rd),
-	.vlan_fifo_rd			(vlan_fifo_rd),
-	
-	.parser_valid			(parser_valid_w),
-	.pkt_hdr_vec			(pkt_hdr_vec_w),
-
-	.out_vlan				(out_vlan),
-	.out_vlan_valid			(out_vlan_valid),
-	.out_vlan_ready			(out_vlan_ready),
-
+	.tdata_segs				(tdata_segs_out),
+	.tuser_1st				(tuser_1st_out),
+	.segs_valid				(segs_valid_out),
+	.parser_bram_out		(bram_out),
 	// control path
 	.ctrl_s_axis_tdata		(ctrl_s_axis_tdata),
 	.ctrl_s_axis_tuser		(ctrl_s_axis_tuser),
@@ -328,5 +261,42 @@ do_parsing
 	.ctrl_m_axis_tlast		(ctrl_m_axis_tlast)
 );
 
+parser_do_parsing #(
+)
+do_parsing
+(
+	.axis_clk				(axis_clk),
+	.aresetn				(aresetn),
+
+	.tdata_segs				(tdata_segs_out_r),
+	.tuser_1st				(tuser_1st_out_r),
+	.segs_valid				(segs_valid_out_r),
+	.bram_out				(bram_out_r),
+
+	.stg_ready_in			(stg_ready_in),
+
+	.parser_valid			(parser_valid_w),
+	.pkt_hdr_vec			(pkt_hdr_vec_w),
+
+	.out_vlan				(out_vlan),
+	.out_vlan_valid			(out_vlan_valid),
+	.out_vlan_ready			(out_vlan_ready)
+);
+
+
+always @(posedge axis_clk) begin
+	if (~aresetn) begin
+		tdata_segs_out_r <= 0;
+		tuser_1st_out_r <= 0;
+		segs_valid_out_r <= 0;
+		bram_out_r <= 0;
+	end
+	else begin
+		tdata_segs_out_r <= tdata_segs_out;
+		tuser_1st_out_r <= tuser_1st_out_r;
+		segs_valid_out_r <= segs_valid_out;
+		bram_out_r <= bram_out;
+	end
+end
 
 endmodule

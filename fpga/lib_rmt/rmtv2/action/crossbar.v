@@ -20,8 +20,6 @@ module crossbar #(
     input                       action_in_valid,
     output reg                  ready_out,
 
-    //output of vlan_id
-    output reg [11:0]             vlan_id,
     //output to the ALU
     output reg                    alu_in_valid,
     output reg [width_6B*8-1:0]   alu_in_6B_1,
@@ -113,15 +111,8 @@ assign sub_action[0] = action_in[ACT_LEN*25-1 -24*ACT_LEN-:ACT_LEN];
 //assign inputs for ALUs 
 
 always @(posedge clk) begin
-    action_out <= action_in;
-    action_valid_out <= action_in_valid;
-    // ready_out <= ready_in;
-    if(phv_in_valid) begin
-        vlan_id <= phv_in[140:129];
-    end
-    else begin
-        vlan_id <= vlan_id;
-    end
+	action_out <= action_in;
+	action_valid_out <= action_in_valid;
 end
 
 localparam IDLE = 0,

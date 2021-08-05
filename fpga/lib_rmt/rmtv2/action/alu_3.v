@@ -54,7 +54,7 @@ always @(*) begin
 	case (state)
 		IDLE_S: begin
 			if (action_valid_in) begin
-				state_next = WAIT3_S;
+				state_next = OUTPUT_S;
 				case(action_in[24:21])
             	    4'b1100: begin // dst_port
             	        comp_meta_data_out_r[255:32] = {action_in[10:5],comp_meta_data_in[249:32]};

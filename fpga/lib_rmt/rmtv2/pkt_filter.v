@@ -6,7 +6,8 @@
 
 module pkt_filter #(
 	parameter C_S_AXIS_DATA_WIDTH = 512,
-	parameter C_S_AXIS_TUSER_WIDTH = 128
+	parameter C_S_AXIS_TUSER_WIDTH = 128,
+	parameter C_VLANID_WIDTH = 12
 )
 (
 	input				clk,
@@ -32,6 +33,9 @@ module pkt_filter #(
 	output reg									m_axis_tvalid,
 	input										m_axis_tready,
 	output reg									m_axis_tlast,
+
+	output reg [C_VLANID_WIDTH-1:0]				vlan_id,
+	output reg									vlan_id_valid,
 
 	//TODO a back-pressure is needed?
 	output reg [C_S_AXIS_DATA_WIDTH-1:0]		c_m_axis_tdata,
@@ -62,6 +66,9 @@ reg [1:0] state, state_next;
 reg 								c_switch;
 wire								w_c_switch;
 
+// vlan 
+reg									vlan_id_valid_next;
+
 //for security and reliability 
 wire [31:0]							cookie_w;
 wire [31:0]							token_w;
@@ -91,6 +98,7 @@ always @(*) begin
 	r_s_tready = m_axis_tready;
 
 	c_switch = 1'b0;
+	vlan_id_valid_next = 0;
 
 	state_next = state;
 
@@ -100,8 +108,8 @@ always @(*) begin
 				if ((s_axis_tdata[143:128]==`ETH_TYPE_IPV4) && 
 					(s_axis_tdata[223:216]==`IPPROT_UDP)) begin
 					//checkme: we put the security check here
-					if(s_axis_tdata[335:320] == `CONTROL_PORT && cookie_w == cookie_val) begin
-					// if(s_axis_tdata[335:320] == `CONTROL_PORT) begin
+					// if(s_axis_tdata[335:320] == `CONTROL_PORT && cookie_w == cookie_val) begin
+					if(s_axis_tdata[335:320] == `CONTROL_PORT) begin
 						state_next = FLUSH_CTL;
 						c_switch = 1'b1;
 						//modify token once its true
@@ -109,9 +117,12 @@ always @(*) begin
 					end
 					else if (!s_axis_tlast) begin
 						//checkme: if this vlan is not configed, send it
-						if((vlan_id_one_hot_w & vlan_drop_flags)==0) begin
+						// TODO: for validity check
+						//if((vlan_id_one_hot_w & vlan_drop_flags)==0) begin
+						if (1) begin
 							state_next = FLUSH_DATA;
 							c_switch = 1'b0;
+							vlan_id_valid_next = 1;
 						end
 						else begin
 							state_next = DROP_PKT;
@@ -122,6 +133,7 @@ always @(*) begin
 					else if (s_axis_tlast) begin
 						state_next = WAIT_FIRST_PKT;
 						c_switch = 1'b0;
+						vlan_id_valid_next = 1;
 						//checkme: if this vlan is configed, drop it
 						if((vlan_id_one_hot_w & vlan_drop_flags)!=0) begin
 							r_tvalid = 0;
@@ -186,13 +198,16 @@ always @(posedge clk or negedge aresetn) begin
 
 		//ctrl_token_r <= time_stamp[31:0];
 		ctrl_token_r <= 32'b0;
+		//
+		vlan_id <= 0;
+		vlan_id_valid <= 0;
 	end
 
 	else begin
 		state <= state_next;
 		ctrl_token_r <= ctrl_token_next;
 
-		if(!w_c_switch) begin
+		if(!w_c_switch) begin // data pkt
 			m_axis_tdata <= r_tdata;
 			m_axis_tkeep <= r_tkeep;
 			m_axis_tuser <= r_tuser;
@@ -206,8 +221,11 @@ always @(posedge clk or negedge aresetn) begin
 			c_m_axis_tuser <= 0;
 			c_m_axis_tlast <= 0;
 			c_m_axis_tvalid <= 0;
+
+			vlan_id <= vlan_id_w;
+			vlan_id_valid <= vlan_id_valid_next;
 		end
-		else begin
+		else begin // ctrl pkt
 			m_axis_tdata <= 0;
 			m_axis_tkeep <= 0;
 			m_axis_tuser <= 0;

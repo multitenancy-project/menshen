@@ -38,7 +38,8 @@ module parser_do_parsing #(
 	parameter PKT_HDR_LEN = (6+4+2)*8*8+256, // check with the doc
 	parameter PARSER_MOD_ID = 3'b0,
 	parameter C_NUM_SEGS = 2,
-	parameter C_VLANID_WIDTH = 12
+	parameter C_VLANID_WIDTH = 12,
+	parameter C_PARSER_RAM_WIDTH = 160
 )
 (
 	input											axis_clk,
@@ -46,38 +47,19 @@ module parser_do_parsing #(
 
 	input [C_NUM_SEGS*C_AXIS_DATA_WIDTH-1:0]		tdata_segs,
 	input [C_AXIS_TUSER_WIDTH-1:0]					tuser_1st,
+	input											segs_valid,
+	input [C_PARSER_RAM_WIDTH-1:0]					bram_in,
+	input											bram_in_valid,
 
-	input [C_VLANID_WIDTH-1:0]						vlan_id,
-
-	input											segs_fifo_empty,
-	input											vlan_fifo_empty,
 
 	input											stg_ready_in,
-
-	// output
-	output reg										segs_fifo_rd,
-	output reg										vlan_fifo_rd,
 
 	// phv output
 	output reg										parser_valid,
 	output reg [PKT_HDR_LEN-1:0]					pkt_hdr_vec,
-
-	output reg [C_VLANID_WIDTH-1:0]					out_vlan,
-	output reg										out_vlan_valid,
-	input											out_vlan_ready,
-
-	// ctrl path
-	input [C_AXIS_DATA_WIDTH-1:0]					ctrl_s_axis_tdata,
-	input [C_AXIS_TUSER_WIDTH-1:0]					ctrl_s_axis_tuser,
-	input [C_AXIS_DATA_WIDTH/8-1:0]					ctrl_s_axis_tkeep,
-	input											ctrl_s_axis_tvalid,
-	input											ctrl_s_axis_tlast,
-
-	output reg [C_AXIS_DATA_WIDTH-1:0]				ctrl_m_axis_tdata,
-	output reg [C_AXIS_TUSER_WIDTH-1:0]				ctrl_m_axis_tuser,
-	output reg [C_AXIS_DATA_WIDTH/8-1:0]			ctrl_m_axis_tkeep,
-	output reg										ctrl_m_axis_tvalid,
-	output reg										ctrl_m_axis_tlast
+	// vlan output
+	output reg [C_VLANID_WIDTH-1:0]					vlan_out,
+	output reg										vlan_out_valid
 );
 
 localparam			IDLE=0,
@@ -92,25 +74,22 @@ localparam			IDLE=0,
 reg [PKT_HDR_LEN-1:0]	pkt_hdr_vec_next;
 reg parser_valid_next;
 reg [3:0] state, state_next;
-reg [C_VLANID_WIDTH-1:0]	out_vlan_next;
-reg							out_vlan_valid_next;
-reg							out_vlan_output, out_vlan_output_next;
-reg							out_vlan_exist, out_vlan_exist_next;
+reg [11:0] vlan_out_next;
+reg vlan_out_valid_next;
 
-wire [159:0] bram_out;
 // parsing actions
 wire [15:0] parse_action [0:9];		// we have 10 parse action
 
-assign parse_action[9] = bram_out[0+:16];
-assign parse_action[8] = bram_out[16+:16];
-assign parse_action[7] = bram_out[32+:16];
-assign parse_action[6] = bram_out[48+:16];
-assign parse_action[5] = bram_out[64+:16];
-assign parse_action[4] = bram_out[80+:16];
-assign parse_action[3] = bram_out[96+:16];
-assign parse_action[2] = bram_out[112+:16];
-assign parse_action[1] = bram_out[128+:16];
-assign parse_action[0] = bram_out[144+:16];
+assign parse_action[9] = bram_in[0+:16];
+assign parse_action[8] = bram_in[16+:16];
+assign parse_action[7] = bram_in[32+:16];
+assign parse_action[6] = bram_in[48+:16];
+assign parse_action[5] = bram_in[64+:16];
+assign parse_action[4] = bram_in[80+:16];
+assign parse_action[3] = bram_in[96+:16];
+assign parse_action[2] = bram_in[112+:16];
+assign parse_action[1] = bram_in[128+:16];
+assign parse_action[0] = bram_in[144+:16];
 
 
 reg [9:0] sub_parse_act_valid;
@@ -145,11 +124,6 @@ always @(*) begin
 	parser_valid_next = 0;
 	pkt_hdr_vec_next = pkt_hdr_vec;
 	//
-	out_vlan_next = out_vlan;
-	out_vlan_valid_next = 0;
-	out_vlan_exist_next = out_vlan_exist;
-	out_vlan_output_next = out_vlan_output;
-	//
 	val_2B_nxt[0]=val_2B[0];
 	val_2B_nxt[1]=val_2B[1];
 	val_2B_nxt[2]=val_2B[2];
@@ -177,51 +151,15 @@ always @(*) begin
 	//
 	sub_parse_act_valid = 10'b0;
 	//
-	segs_fifo_rd = 0;
-	vlan_fifo_rd = 0;
+	vlan_out_next = vlan_out;
+	vlan_out_valid_next = 0;
 
 	case (state)
 		IDLE: begin
-			if (!vlan_fifo_empty) begin
-				state_next = WAIT_1CYCLE_RAM;
-
-				out_vlan_next = vlan_id;
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
-				else begin
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 0;
-				end
-			end
-		end
-		WAIT_1CYCLE_RAM: begin
-			state_next = START_SUB_PARSE;
-
-			// out vlan
-			if (out_vlan_exist && !out_vlan_output) begin
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
-			end
-		end
-		START_SUB_PARSE: begin
-			if (!segs_fifo_empty) begin
+			if (segs_valid) begin
 				sub_parse_act_valid = 10'b1111111111;
+				vlan_out_next = tdata_segs[116+:12];
 				state_next = FINISH_SUB_PARSE;
-			end
-
-			// out vlan
-			if (out_vlan_exist && !out_vlan_output) begin
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
 			end
 		end
 		FINISH_SUB_PARSE: begin
@@ -237,30 +175,22 @@ always @(*) begin
 			`SUB_PARSE(7)
 			`SUB_PARSE(8)
 			`SUB_PARSE(9)
-			// out vlan
-			if (out_vlan_exist && !out_vlan_output) begin
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
-			end
+
 		end
 		GET_PHV_OUTPUT: begin
 			state_next = OUTPUT;
+			vlan_out_valid_next = 1;
 			pkt_hdr_vec_next ={val_6B_swapped[7], val_6B_swapped[6], val_6B_swapped[5], val_6B_swapped[4], val_6B_swapped[3], val_6B_swapped[2], val_6B_swapped[1], val_6B_swapped[0],
 							val_4B_swapped[7], val_4B_swapped[6], val_4B_swapped[5], val_4B_swapped[4], val_4B_swapped[3], val_4B_swapped[2], val_4B_swapped[1], val_4B_swapped[0],
 							val_2B_swapped[7], val_2B_swapped[6], val_2B_swapped[5], val_2B_swapped[4], val_2B_swapped[3], val_2B_swapped[2], val_2B_swapped[1], val_2B_swapped[0],
 							// Tao: manually set output port to 1 for eazy test
 							// {115{1'b0}}, vlan_id, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
-							{115{1'b0}}, vlan_id, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
+							{115{1'b0}}, vlan_out, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
 							// {115{1'b0}}, vlan_id, 1'b0, tuser_1st};
 							// {128{1'b0}}, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
 		end
 		OUTPUT: begin
 			if (stg_ready_in) begin
-				segs_fifo_rd = 1;
-				vlan_fifo_rd = 1;
 				parser_valid_next = 1;
 				state_next = IDLE;
 				
@@ -303,10 +233,8 @@ always @(posedge axis_clk) begin
 		pkt_hdr_vec <= 0;
 		parser_valid <= 0;
 		//
-		out_vlan <= 0;
-		out_vlan_valid <= 0;
-		out_vlan_exist <= 0;
-		out_vlan_output <= 1;
+		vlan_out <= 0;
+		vlan_out_valid <= 0;
 		//
 		val_2B[0] <= 0;
 		val_2B[1] <= 0;
@@ -339,10 +267,8 @@ always @(posedge axis_clk) begin
 		pkt_hdr_vec <= pkt_hdr_vec_next;
 		parser_valid <= parser_valid_next;
 		//
-		out_vlan <= out_vlan_next;
-		out_vlan_valid <= out_vlan_valid_next;
-		out_vlan_exist <= out_vlan_exist_next;
-		out_vlan_output <= out_vlan_output_next;
+		vlan_out <= vlan_out_next;
+		vlan_out_valid <= vlan_out_valid_next;
 		//
 		val_2B[0] <= val_2B_nxt[0];
 		val_2B[1] <= val_2B_nxt[1];
@@ -397,195 +323,6 @@ generate
 		);
 	end
 endgenerate
-
-/*================Control Path====================*/
-wire [7:0]          mod_id; //module ID
-wire [15:0]         control_flag; //dst udp port num
-reg  [7:0]          c_index; //table index(addr)
-reg                 c_wr_en; //enable table write(wen)
-reg  [159:0]        entry_reg;
-
-reg  [2:0]          c_state;
-
-localparam IDLE_C = 1,
-           WRITE_C  =2,
-           SU_WRITE_C = 3;
-
-assign mod_id = ctrl_s_axis_tdata[368+:8];
-assign control_flag = ctrl_s_axis_tdata[335:320];
-
-//LE to BE switching
-wire[C_AXIS_DATA_WIDTH-1:0] ctrl_s_axis_tdata_swapped;
-assign ctrl_s_axis_tdata_swapped = {	ctrl_s_axis_tdata[0+:8],
-									ctrl_s_axis_tdata[8+:8],
-									ctrl_s_axis_tdata[16+:8],
-									ctrl_s_axis_tdata[24+:8],
-									ctrl_s_axis_tdata[32+:8],
-									ctrl_s_axis_tdata[40+:8],
-									ctrl_s_axis_tdata[48+:8],
-									ctrl_s_axis_tdata[56+:8],
-									ctrl_s_axis_tdata[64+:8],
-									ctrl_s_axis_tdata[72+:8],
-									ctrl_s_axis_tdata[80+:8],
-									ctrl_s_axis_tdata[88+:8],
-									ctrl_s_axis_tdata[96+:8],
-									ctrl_s_axis_tdata[104+:8],
-									ctrl_s_axis_tdata[112+:8],
-									ctrl_s_axis_tdata[120+:8],
-									ctrl_s_axis_tdata[128+:8],
-									ctrl_s_axis_tdata[136+:8],
-									ctrl_s_axis_tdata[144+:8],
-									ctrl_s_axis_tdata[152+:8],
-									ctrl_s_axis_tdata[160+:8],
-									ctrl_s_axis_tdata[168+:8],
-									ctrl_s_axis_tdata[176+:8],
-									ctrl_s_axis_tdata[184+:8],
-									ctrl_s_axis_tdata[192+:8],
-									ctrl_s_axis_tdata[200+:8],
-									ctrl_s_axis_tdata[208+:8],
-									ctrl_s_axis_tdata[216+:8],
-									ctrl_s_axis_tdata[224+:8],
-									ctrl_s_axis_tdata[232+:8],
-									ctrl_s_axis_tdata[240+:8],
-									ctrl_s_axis_tdata[248+:8],
-									ctrl_s_axis_tdata[256+:8], 
-									ctrl_s_axis_tdata[264+:8], 
-									ctrl_s_axis_tdata[272+:8], 
-									ctrl_s_axis_tdata[280+:8],
-									ctrl_s_axis_tdata[288+:8],
-									ctrl_s_axis_tdata[296+:8],
-									ctrl_s_axis_tdata[304+:8],
-									ctrl_s_axis_tdata[312+:8],
-									ctrl_s_axis_tdata[320+:8],
-									ctrl_s_axis_tdata[328+:8],
-									ctrl_s_axis_tdata[336+:8],
-									ctrl_s_axis_tdata[344+:8],
-									ctrl_s_axis_tdata[352+:8],
-									ctrl_s_axis_tdata[360+:8],
-									ctrl_s_axis_tdata[368+:8],
-									ctrl_s_axis_tdata[376+:8],
-									ctrl_s_axis_tdata[384+:8],
-									ctrl_s_axis_tdata[392+:8],
-									ctrl_s_axis_tdata[400+:8],
-									ctrl_s_axis_tdata[408+:8],
-									ctrl_s_axis_tdata[416+:8],
-									ctrl_s_axis_tdata[424+:8],
-									ctrl_s_axis_tdata[432+:8],
-									ctrl_s_axis_tdata[440+:8],
-									ctrl_s_axis_tdata[448+:8],
-									ctrl_s_axis_tdata[456+:8],
-									ctrl_s_axis_tdata[464+:8],
-									ctrl_s_axis_tdata[472+:8],
-									ctrl_s_axis_tdata[480+:8],
-									ctrl_s_axis_tdata[488+:8],
-									ctrl_s_axis_tdata[496+:8],
-									ctrl_s_axis_tdata[504+:8]
-									};
-
-always @(posedge axis_clk or negedge aresetn) begin
-    if(~aresetn) begin
-        c_wr_en <= 1'b0;
-        c_index <= 4'b0;
-
-        ctrl_m_axis_tdata <= 0;
-        ctrl_m_axis_tuser <= 0;
-        ctrl_m_axis_tkeep <= 0;
-        ctrl_m_axis_tvalid <= 0;
-        ctrl_m_axis_tlast <= 0;
-        entry_reg <= 0;
-
-        c_state <= IDLE_C;
-    end
-    else begin
-        case(c_state)
-            IDLE_C: begin
-                if(ctrl_s_axis_tvalid && mod_id[2:0] == PARSER_MOD_ID && control_flag == 16'hf2f1)begin
-                    c_wr_en <= 1'b0;
-                    c_index <= ctrl_s_axis_tdata[384+:8];
-
-                    ctrl_m_axis_tdata <= 0;
-                    ctrl_m_axis_tuser <= 0;
-                    ctrl_m_axis_tkeep <= 0;
-                    ctrl_m_axis_tvalid <= 0;
-                    ctrl_m_axis_tlast <= 0;
-
-                    c_state <= WRITE_C;
-
-                end
-                else begin
-                    c_wr_en <= 1'b0;
-                    c_index <= 4'b0; 
-                    entry_reg <= 0;
-
-                    ctrl_m_axis_tdata <= ctrl_s_axis_tdata;
-                    ctrl_m_axis_tuser <= ctrl_s_axis_tuser;
-                    ctrl_m_axis_tkeep <= ctrl_s_axis_tkeep;
-                    ctrl_m_axis_tvalid <= ctrl_s_axis_tvalid;
-                    ctrl_m_axis_tlast <= ctrl_s_axis_tlast;
-
-                    c_state <= IDLE_C;
-                end
-            end
-            //support full table flush
-            WRITE_C: begin
-                if(ctrl_s_axis_tvalid) begin
-                    c_wr_en <= 1'b1;
-                    entry_reg <= ctrl_s_axis_tdata_swapped[511 -: 160];
-                    if(ctrl_s_axis_tlast) begin
-                        c_state <= IDLE_C;
-                    end
-                    else begin
-                        c_state <= SU_WRITE_C;
-                    end
-                end
-                else begin
-                    c_wr_en <= 1'b0;
-                end
-            end
-
-            SU_WRITE_C: begin
-                if(ctrl_s_axis_tvalid) begin
-                    entry_reg <= ctrl_s_axis_tdata_swapped[511 -: 160];
-                    c_wr_en <= 1'b1;
-                    c_index <= c_index + 1'b1;
-                    if(ctrl_s_axis_tlast) begin
-                        c_state <= IDLE_C;
-                    end
-                    else begin
-                        c_state <= SU_WRITE_C;
-                    end
-                end
-                else begin
-                    c_wr_en <= 1'b0;
-                end
-            end
-        endcase
-
-    end
-end
-
-
-// =============================================================== //
-// parse_act_ram_ip #(
-// 	.C_INIT_FILE_NAME	("./parse_act_ram_init_file.mif"),
-// 	.C_LOAD_INIT_FILE	(1)
-// )
-parse_act_ram_ip
-parse_act_ram
-(
-	// write port
-	.clka		(axis_clk),
-	.addra		(c_index[4:0]),
-	.dina		(entry_reg),
-	.ena		(1'b1),
-	.wea		(c_wr_en),
-
-	//
-	.clkb		(axis_clk),
-	.addrb		(vlan_id[8:4]), // TODO: note that we may change due to little or big endian
-	.doutb		(bram_out),
-	.enb		(1'b1) // always set to 1
-);
 
 
 endmodule

@@ -46,17 +46,12 @@ module parser_do_parsing #(
 
 	input [C_NUM_SEGS*C_AXIS_DATA_WIDTH-1:0]		tdata_segs,
 	input [C_AXIS_TUSER_WIDTH-1:0]					tuser_1st,
+	input											segs_valid,
+	input [159:0]									bram_out,
 
-	input [C_VLANID_WIDTH-1:0]						vlan_id,
-
-	input											segs_fifo_empty,
-	input											vlan_fifo_empty,
 
 	input											stg_ready_in,
-
 	// output
-	output reg										segs_fifo_rd,
-	output reg										vlan_fifo_rd,
 
 	// phv output
 	output reg										parser_valid,
@@ -64,20 +59,8 @@ module parser_do_parsing #(
 
 	output reg [C_VLANID_WIDTH-1:0]					out_vlan,
 	output reg										out_vlan_valid,
-	input											out_vlan_ready,
+	input											out_vlan_ready
 
-	// ctrl path
-	input [C_AXIS_DATA_WIDTH-1:0]					ctrl_s_axis_tdata,
-	input [C_AXIS_TUSER_WIDTH-1:0]					ctrl_s_axis_tuser,
-	input [C_AXIS_DATA_WIDTH/8-1:0]					ctrl_s_axis_tkeep,
-	input											ctrl_s_axis_tvalid,
-	input											ctrl_s_axis_tlast,
-
-	output reg [C_AXIS_DATA_WIDTH-1:0]				ctrl_m_axis_tdata,
-	output reg [C_AXIS_TUSER_WIDTH-1:0]				ctrl_m_axis_tuser,
-	output reg [C_AXIS_DATA_WIDTH/8-1:0]			ctrl_m_axis_tkeep,
-	output reg										ctrl_m_axis_tvalid,
-	output reg										ctrl_m_axis_tlast
 );
 
 localparam			IDLE=0,
@@ -94,10 +77,7 @@ reg parser_valid_next;
 reg [3:0] state, state_next;
 reg [C_VLANID_WIDTH-1:0]	out_vlan_next;
 reg							out_vlan_valid_next;
-reg							out_vlan_output, out_vlan_output_next;
-reg							out_vlan_exist, out_vlan_exist_next;
 
-wire [159:0] bram_out;
 // parsing actions
 wire [15:0] parse_action [0:9];		// we have 10 parse action
 
@@ -148,8 +128,6 @@ always @(*) begin
 	//
 	out_vlan_next = out_vlan;
 	out_vlan_valid_next = 0;
-	out_vlan_exist_next = out_vlan_exist;
-	out_vlan_output_next = out_vlan_output;
 	//
 	val_2B_nxt[0]=val_2B[0];
 	val_2B_nxt[1]=val_2B[1];
@@ -178,51 +156,13 @@ always @(*) begin
 	//
 	sub_parse_act_valid = 10'b0;
 	//
-	segs_fifo_rd = 0;
-	vlan_fifo_rd = 0;
 
 	case (state)
 		IDLE: begin
-			if (!vlan_fifo_empty) begin
-				state_next = WAIT_1CYCLE_RAM;
-
-				out_vlan_next = vlan_id;
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
-				else begin
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 0;
-				end
-			end
-		end
-		WAIT_1CYCLE_RAM: begin
-			state_next = START_SUB_PARSE;
-
-			// out vlan
-			if (out_vlan_exist && !out_vlan_output) begin
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
-			end
-		end
-		START_SUB_PARSE: begin
-			if (!segs_fifo_empty) begin
+			if (segs_valid) begin
+				out_vlan_next = tdata_segs[116+:12];
 				sub_parse_act_valid = 10'b1111111111;
 				state_next = FINISH_SUB_PARSE;
-			end
-
-			// out vlan
-			if (out_vlan_exist && !out_vlan_output) begin
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
 			end
 		end
 		FINISH_SUB_PARSE: begin
@@ -238,30 +178,23 @@ always @(*) begin
 			`SUB_PARSE(7)
 			`SUB_PARSE(8)
 			`SUB_PARSE(9)
-			// out vlan
-			if (out_vlan_exist && !out_vlan_output) begin
-				if (out_vlan_ready) begin
-					out_vlan_valid_next = 1;
-					out_vlan_exist_next = 1;
-					out_vlan_output_next = 1;
-				end
-			end
 		end
 		GET_PHV_OUTPUT: begin
+			if (out_vlan_ready) begin
+				out_vlan_valid_next = 1;
+			end
 			state_next = OUTPUT;
 			pkt_hdr_vec_next ={val_6B_swapped[7], val_6B_swapped[6], val_6B_swapped[5], val_6B_swapped[4], val_6B_swapped[3], val_6B_swapped[2], val_6B_swapped[1], val_6B_swapped[0],
 							val_4B_swapped[7], val_4B_swapped[6], val_4B_swapped[5], val_4B_swapped[4], val_4B_swapped[3], val_4B_swapped[2], val_4B_swapped[1], val_4B_swapped[0],
 							val_2B_swapped[7], val_2B_swapped[6], val_2B_swapped[5], val_2B_swapped[4], val_2B_swapped[3], val_2B_swapped[2], val_2B_swapped[1], val_2B_swapped[0],
 							// Tao: manually set output port to 1 for eazy test
 							// {115{1'b0}}, vlan_id, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
-							{115{1'b0}}, vlan_id, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
+							{115{1'b0}}, out_vlan, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
 							// {115{1'b0}}, vlan_id, 1'b0, tuser_1st};
 							// {128{1'b0}}, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
 		end
 		OUTPUT: begin
 			if (stg_ready_in) begin
-				segs_fifo_rd = 1;
-				vlan_fifo_rd = 1;
 				parser_valid_next = 1;
 				state_next = IDLE;
 				
@@ -306,8 +239,6 @@ always @(posedge axis_clk) begin
 		//
 		out_vlan <= 0;
 		out_vlan_valid <= 0;
-		out_vlan_exist <= 0;
-		out_vlan_output <= 1;
 		//
 		val_2B[0] <= 0;
 		val_2B[1] <= 0;
@@ -342,8 +273,6 @@ always @(posedge axis_clk) begin
 		//
 		out_vlan <= out_vlan_next;
 		out_vlan_valid <= out_vlan_valid_next;
-		out_vlan_exist <= out_vlan_exist_next;
-		out_vlan_output <= out_vlan_output_next;
 		//
 		val_2B[0] <= val_2B_nxt[0];
 		val_2B[1] <= val_2B_nxt[1];
@@ -400,168 +329,5 @@ generate
 	end
 endgenerate
 
-/*================Control Path====================*/
-reg [C_AXIS_DATA_WIDTH-1:0]		ctrl_m_axis_tdata_next;
-reg [C_AXIS_TUSER_WIDTH-1:0]	ctrl_m_axis_tuser_next;
-reg [C_AXIS_DATA_WIDTH/8-1:0]	ctrl_m_axis_tkeep_next;
-reg								ctrl_m_axis_tlast_next;
-reg								ctrl_m_axis_tvalid_next;
 
-wire [C_AXIS_DATA_WIDTH-1:0]	ctrl_s_axis_tdata_swapped;
-
-assign ctrl_s_axis_tdata_swapped = {	ctrl_s_axis_tdata[0+:8],
-										ctrl_s_axis_tdata[8+:8],
-										ctrl_s_axis_tdata[16+:8],
-										ctrl_s_axis_tdata[24+:8],
-										ctrl_s_axis_tdata[32+:8],
-										ctrl_s_axis_tdata[40+:8],
-										ctrl_s_axis_tdata[48+:8],
-										ctrl_s_axis_tdata[56+:8],
-										ctrl_s_axis_tdata[64+:8],
-										ctrl_s_axis_tdata[72+:8],
-										ctrl_s_axis_tdata[80+:8],
-										ctrl_s_axis_tdata[88+:8],
-										ctrl_s_axis_tdata[96+:8],
-										ctrl_s_axis_tdata[104+:8],
-										ctrl_s_axis_tdata[112+:8],
-										ctrl_s_axis_tdata[120+:8],
-										ctrl_s_axis_tdata[128+:8],
-										ctrl_s_axis_tdata[136+:8],
-										ctrl_s_axis_tdata[144+:8],
-										ctrl_s_axis_tdata[152+:8],
-										ctrl_s_axis_tdata[160+:8],
-										ctrl_s_axis_tdata[168+:8],
-										ctrl_s_axis_tdata[176+:8],
-										ctrl_s_axis_tdata[184+:8],
-										ctrl_s_axis_tdata[192+:8],
-										ctrl_s_axis_tdata[200+:8],
-										ctrl_s_axis_tdata[208+:8],
-										ctrl_s_axis_tdata[216+:8],
-										ctrl_s_axis_tdata[224+:8],
-										ctrl_s_axis_tdata[232+:8],
-										ctrl_s_axis_tdata[240+:8],
-										ctrl_s_axis_tdata[248+:8]};
-
-
-reg	[7:0]						ctrl_wr_ram_addr_next;
-reg [7:0]						ctrl_wr_ram_addr;
-reg	[159:0]						ctrl_wr_ram_data;
-reg	[159:0]						ctrl_wr_ram_data_next;
-reg								ctrl_wr_ram_en_next;
-reg								ctrl_wr_ram_en;
-wire [7:0]						ctrl_mod_id;
-
-assign ctrl_mod_id = ctrl_s_axis_tdata[112+:8];
-
-localparam	WAIT_FIRST_PKT = 0,
-			WAIT_SECOND_PKT = 1,
-			WAIT_THIRD_PKT = 2,
-			WRITE_RAM = 3,
-			FLUSH_REST_C = 4;
-
-reg [2:0] ctrl_state, ctrl_state_next;
-
-always @(*) begin
-	ctrl_m_axis_tdata_next = ctrl_s_axis_tdata;
-	ctrl_m_axis_tuser_next = ctrl_s_axis_tuser;
-	ctrl_m_axis_tkeep_next = ctrl_s_axis_tkeep;
-	ctrl_m_axis_tlast_next = ctrl_s_axis_tlast;
-	ctrl_m_axis_tvalid_next = ctrl_s_axis_tvalid;
-
-	ctrl_state_next = ctrl_state;
-	ctrl_wr_ram_addr_next = ctrl_wr_ram_addr;
-	ctrl_wr_ram_data_next = ctrl_wr_ram_data;
-	ctrl_wr_ram_en_next = 0;
-
-	case (ctrl_state)
-		WAIT_FIRST_PKT: begin
-			// 1st ctrl packet
-			if (ctrl_s_axis_tvalid) begin
-				ctrl_state_next = WAIT_SECOND_PKT;
-			end
-		end
-		WAIT_SECOND_PKT: begin
-			// 2nd ctrl packet, we can check module ID
-			if (ctrl_s_axis_tvalid) begin
-				if (ctrl_mod_id[2:0]==PARSER_MOD_ID) begin
-					ctrl_state_next = WAIT_THIRD_PKT;
-
-					ctrl_wr_ram_addr_next = ctrl_s_axis_tdata[128+:8];
-				end
-				else begin
-					ctrl_state_next = FLUSH_REST_C;
-				end
-			end
-		end
-		WAIT_THIRD_PKT: begin // first half of ctrl_wr_ram_data
-			if (ctrl_s_axis_tvalid) begin
-				ctrl_state_next = WRITE_RAM;
-				ctrl_wr_ram_data_next = ctrl_s_axis_tdata_swapped[255-:160];
-			end
-		end
-		WRITE_RAM: begin // second half of ctrl_wr_ram_data
-			if (ctrl_s_axis_tvalid) begin
-				if (ctrl_s_axis_tlast) 
-					ctrl_state_next = WAIT_FIRST_PKT;
-				else
-					ctrl_state_next = FLUSH_REST_C;
-				ctrl_wr_ram_en_next = 1;
-			end
-		end
-		FLUSH_REST_C: begin
-			if (ctrl_s_axis_tvalid && ctrl_s_axis_tlast) begin
-				ctrl_state_next = WAIT_FIRST_PKT;
-			end
-		end
-	endcase
-end
-
-always @(posedge axis_clk) begin
-	if (~aresetn) begin
-		//
-		ctrl_state <= WAIT_FIRST_PKT;
-
-		ctrl_m_axis_tdata <= 0;
-		ctrl_m_axis_tuser <= 0;
-		ctrl_m_axis_tkeep <= 0;
-		ctrl_m_axis_tvalid <= 0;
-		ctrl_m_axis_tlast <= 0;
-
-		//
-		ctrl_wr_ram_addr <= 0;
-		ctrl_wr_ram_data <= 0;
-		ctrl_wr_ram_en <= 0;
-	end
-	else begin
-		ctrl_state <= ctrl_state_next;
-
-		ctrl_m_axis_tdata <= ctrl_m_axis_tdata_next;
-		ctrl_m_axis_tuser <= ctrl_m_axis_tuser_next;
-		ctrl_m_axis_tkeep <= ctrl_m_axis_tkeep_next;
-		ctrl_m_axis_tlast <= ctrl_m_axis_tlast_next;
-		ctrl_m_axis_tvalid <= ctrl_m_axis_tvalid_next;
-		//
-		ctrl_wr_ram_addr <= ctrl_wr_ram_addr_next;
-		ctrl_wr_ram_data <= ctrl_wr_ram_data_next;
-		ctrl_wr_ram_en <= ctrl_wr_ram_en_next;
-	end
-end
-
-// =============================================================== //
-parse_act_ram_ip
-parse_act_ram
-(
-	// write port
-	.clka		(axis_clk),
-	.addra		(ctrl_wr_ram_addr[4:0]),
-	.dina		(ctrl_wr_ram_data),
-	.ena		(1'b1),
-	.wea		(ctrl_wr_ram_en),
-
-	//
-	.clkb		(axis_clk),
-	.addrb		(vlan_id[8:4]), // [NOTICE:] note that we may change due to little or big endian
-	.doutb		(bram_out),
-	.enb		(1'b1) // always set to 1
-);
 endmodule

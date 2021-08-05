@@ -36,6 +36,7 @@ initial begin
 	aresetn = 1;
 	start = 0;
 	pkt_len = 1;
+	m_axis_tready = 1;
 
 	#100;
 	aresetn = 0; // reset all the values
@@ -90,6 +91,7 @@ always @(*) begin
 		if (c_counter == 0) begin
 			s_axis_tvalid = 1;
 			s_axis_tdata = 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000;
+			s_axis_tuser = 128'h0;
 			s_axis_tkeep = {64{1'b1}};
 		end
 		else begin

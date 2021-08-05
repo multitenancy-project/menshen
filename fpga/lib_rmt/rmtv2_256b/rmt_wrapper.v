@@ -63,20 +63,30 @@ reg									stg3_phv_out_valid_d1;
 //
 wire [C_VLANID_WIDTH-1:0]			stg0_vlan_in;
 wire								stg0_vlan_valid_in;
-wire								stg0_vlan_fifo_ready;
+wire								stg0_vlan_ready;
 wire [C_VLANID_WIDTH-1:0]			stg0_vlan_out;
 wire								stg0_vlan_valid_out;
-wire								stg1_vlan_fifo_ready;
+wire								stg1_vlan_ready;
 wire [C_VLANID_WIDTH-1:0]			stg1_vlan_out;
 wire								stg1_vlan_valid_out;
-wire								stg2_vlan_fifo_ready;
+wire								stg2_vlan_ready;
 wire [C_VLANID_WIDTH-1:0]			stg2_vlan_out;
 wire								stg2_vlan_valid_out;
-wire								stg3_vlan_fifo_ready;
+wire								stg3_vlan_ready;
 wire [C_VLANID_WIDTH-1:0]			stg3_vlan_out;
 wire								stg3_vlan_valid_out;
-wire								last_stg_vlan_fifo_ready;
+wire								last_stg_vlan_ready;
 
+reg [C_VLANID_WIDTH-1:0]			stg0_vlan_in_r;
+reg									stg0_vlan_valid_in_r;
+reg [C_VLANID_WIDTH-1:0]			stg0_vlan_out_r;
+reg									stg0_vlan_valid_out_r;
+reg [C_VLANID_WIDTH-1:0]			stg1_vlan_out_r;
+reg									stg1_vlan_valid_out_r;
+reg [C_VLANID_WIDTH-1:0]			stg2_vlan_out_r;
+reg									stg2_vlan_valid_out_r;
+reg [C_VLANID_WIDTH-1:0]			stg3_vlan_out_r;
+reg									stg3_vlan_valid_out_r;
 // back pressure signals
 wire s_axis_tready_p;
 wire stg0_ready;
@@ -290,9 +300,10 @@ phv_parser
 	// output
 	.parser_valid		(stg0_phv_in_valid),
 	.pkt_hdr_vec		(stg0_phv_in),
+	//
 	.out_vlan			(stg0_vlan_in),
 	.out_vlan_valid		(stg0_vlan_valid_in),
-	.out_vlan_ready		(stg0_vlan_fifo_ready),
+	.out_vlan_ready		(stg0_vlan_ready),
 	// 
 	.stg_ready_in	(stg0_ready),
 
@@ -352,13 +363,13 @@ stage0
 	// input
     .phv_in					(stg0_phv_in_d1),
     .phv_in_valid			(stg0_phv_in_valid_d1),
-	.vlan_in				(stg0_vlan_in),
-	.vlan_valid_in			(stg0_vlan_valid_in),
-	.vlan_fifo_ready		(stg0_vlan_fifo_ready),
+	.vlan_in				(stg0_vlan_in_r),
+	.vlan_valid_in			(stg0_vlan_valid_in_r),
+	.vlan_ready_out			(stg0_vlan_ready),
 	// output
 	.vlan_out				(stg0_vlan_out),
 	.vlan_valid_out			(stg0_vlan_valid_out),
-	.vlan_out_ready			(stg1_vlan_fifo_ready),
+	.vlan_out_ready			(stg1_vlan_ready),
 	// output
     .phv_out				(stg0_phv_out),
     .phv_out_valid			(stg0_phv_out_valid),
@@ -393,13 +404,13 @@ stage1
 	// input
     .phv_in					(stg0_phv_out_d1),
     .phv_in_valid			(stg0_phv_out_valid_d1),
-	.vlan_in				(stg0_vlan_out),
-	.vlan_valid_in			(stg0_vlan_valid_out),
-	.vlan_fifo_ready		(stg1_vlan_fifo_ready),
+	.vlan_in				(stg0_vlan_out_r),
+	.vlan_valid_in			(stg0_vlan_valid_out_r),
+	.vlan_ready_out			(stg1_vlan_ready),
 	// output
 	.vlan_out				(stg1_vlan_out),
 	.vlan_valid_out			(stg1_vlan_valid_out),
-	.vlan_out_ready			(stg2_vlan_fifo_ready),
+	.vlan_out_ready			(stg2_vlan_ready),
 	// output
     .phv_out				(stg1_phv_out),
     .phv_out_valid			(stg1_phv_out_valid),
@@ -434,13 +445,13 @@ stage2
 	// input
     .phv_in					(stg1_phv_out_d1),
     .phv_in_valid			(stg1_phv_out_valid_d1),
-	.vlan_in				(stg1_vlan_out),
-	.vlan_valid_in			(stg1_vlan_valid_out),
-	.vlan_fifo_ready		(stg2_vlan_fifo_ready),
+	.vlan_in				(stg1_vlan_out_r),
+	.vlan_valid_in			(stg1_vlan_valid_out_r),
+	.vlan_ready_out			(stg2_vlan_ready),
 	// output
 	.vlan_out				(stg2_vlan_out),
 	.vlan_valid_out			(stg2_vlan_valid_out),
-	.vlan_out_ready			(stg3_vlan_fifo_ready),
+	.vlan_out_ready			(stg3_vlan_ready),
 	// output
     .phv_out				(stg2_phv_out),
     .phv_out_valid			(stg2_phv_out_valid),
@@ -474,13 +485,13 @@ stage3
 	// input
     .phv_in					(stg2_phv_out_d1),
     .phv_in_valid			(stg2_phv_out_valid_d1),
-	.vlan_in				(stg2_vlan_out),
-	.vlan_valid_in			(stg2_vlan_valid_out),
-	.vlan_fifo_ready		(stg3_vlan_fifo_ready),
+	.vlan_in				(stg2_vlan_out_r),
+	.vlan_valid_in			(stg2_vlan_valid_out_r),
+	.vlan_ready_out			(stg3_vlan_ready),
 	// output
 	.vlan_out				(stg3_vlan_out),
 	.vlan_valid_out			(stg3_vlan_valid_out),
-	.vlan_out_ready			(last_stg_vlan_fifo_ready),
+	.vlan_out_ready			(last_stg_vlan_ready),
 	// output
     .phv_out				(stg3_phv_out),
     .phv_out_valid			(stg3_phv_out_valid),
@@ -515,9 +526,9 @@ stage4
 	// input
     .phv_in					(stg3_phv_out_d1),
     .phv_in_valid			(stg3_phv_out_valid_d1),
-	.vlan_in				(stg3_vlan_out),
-	.vlan_valid_in			(stg3_vlan_valid_out),
-	.vlan_fifo_ready		(last_stg_vlan_fifo_ready),
+	.vlan_in				(stg3_vlan_out_r),
+	.vlan_valid_in			(stg3_vlan_valid_out_r),
+	.vlan_ready_out			(last_stg_vlan_ready),
 	// back-pressure signals
 	.stage_ready_out		(last_stg_ready),
 	// output
@@ -677,6 +688,17 @@ always @(posedge clk) begin
 		stg1_phv_out_d1 <= 0;
 		stg2_phv_out_d1 <= 0;
 		stg3_phv_out_d1 <= 0;
+		//
+		stg0_vlan_in_r <= 0;
+		stg0_vlan_valid_in_r <= 0;
+		stg0_vlan_out_r <= 0;
+		stg0_vlan_valid_out_r <= 0;
+		stg1_vlan_out_r <= 0;
+		stg1_vlan_valid_out_r <= 0;
+		stg2_vlan_out_r <= 0;
+		stg2_vlan_valid_out_r <= 0;
+		stg3_vlan_out_r <= 0;
+		stg3_vlan_valid_out_r <= 0;
 	end
 	else begin
 		stg0_phv_in_valid_d1 <= stg0_phv_in_valid;
@@ -690,6 +712,17 @@ always @(posedge clk) begin
 		stg1_phv_out_d1 <= stg1_phv_out;
 		stg2_phv_out_d1 <= stg2_phv_out;
 		stg3_phv_out_d1 <= stg3_phv_out;
+		//
+		stg0_vlan_in_r <= stg0_vlan_in;
+		stg0_vlan_valid_in_r <= stg0_vlan_valid_in;
+		stg0_vlan_out_r <= stg0_vlan_out;
+		stg0_vlan_valid_out_r <= stg0_vlan_valid_out;
+		stg1_vlan_out_r <= stg1_vlan_out;
+		stg1_vlan_valid_out_r <= stg1_vlan_valid_out;
+		stg2_vlan_out_r <= stg2_vlan_out;
+		stg2_vlan_valid_out_r <= stg2_vlan_valid_out;
+		stg3_vlan_out_r <= stg3_vlan_out;
+		stg3_vlan_valid_out_r <= stg3_vlan_valid_out;
 	end
 end
 

@@ -60,8 +60,9 @@ lappend SYN_FILES lib_rmt/rmtv2/rmt_wrapper.v
 lappend SYN_FILES lib_rmt/rmtv2/pkt_filter.v
 lappend SYN_FILES lib_rmt/rmtv2/cookie.v
 lappend SYN_FILES lib_rmt/rmtv2/parser_top.v
-lappend SYN_FILES lib_rmt/rmtv2/parser_wait_segs.v
+lappend SYN_FILES lib_rmt/rmtv2/parser_do_parsing_top.v
 lappend SYN_FILES lib_rmt/rmtv2/parser_do_parsing.v
+lappend SYN_FILES lib_rmt/rmtv2/parser_wait_segs.v
 lappend SYN_FILES lib_rmt/rmtv2/sub_parser.v
 lappend SYN_FILES lib_rmt/rmtv2/deparser_top.v
 lappend SYN_FILES lib_rmt/rmtv2/depar_wait_segs.v
@@ -76,7 +77,10 @@ lappend SYN_FILES lib_rmt/rmtv2/action/alu_2.v
 lappend SYN_FILES lib_rmt/rmtv2/action/alu_3.v
 lappend SYN_FILES lib_rmt/rmtv2/action/crossbar.v
 lappend SYN_FILES lib_rmt/rmtv2/extract/key_extract.v
-lappend SYN_FILES lib_rmt/rmtv2/lookup/lookup_engine.v
+lappend SYN_FILES lib_rmt/rmtv2/extract/key_extract_top.v
+lappend SYN_FILES lib_rmt/rmtv2/lookup/lookup_engine_top.v
+lappend SYN_FILES lib_rmt/rmtv2/lookup/lke_cam_part.v
+lappend SYN_FILES lib_rmt/rmtv2/lookup/lke_ram_part.v
 
 # XDC files
 set XDC_FILES [list fpga.xdc]

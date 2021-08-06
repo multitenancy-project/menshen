@@ -2,7 +2,7 @@
 
 `define SUB_DEPARSE_1P(idx) \
 	if(parse_action[idx][0]) begin \
-		case(sub_depar_val_out_type[idx]) \
+		case(sub_depar_val_out_type_d1[idx]) \
 			2'b01: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
 			2'b10: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
 			2'b11: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
@@ -11,7 +11,7 @@
 
 `define SUB_DEPARSE_2P(idx) \
 	if(parse_action[idx][0]) begin \
-		case(sub_depar_val_out_type[idx]) \
+		case(sub_depar_val_out_type_d1[idx]) \
 			2'b01: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
 			2'b10: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
 			2'b11: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
@@ -19,12 +19,12 @@
 	end \
 
 `define SWAP_BYTE_ORDER(idx) \
-	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out[idx][0+:8], \
-												sub_depar_val_out[idx][8+:8], \
-												sub_depar_val_out[idx][16+:8], \
-												sub_depar_val_out[idx][24+:8], \
-												sub_depar_val_out[idx][32+:8], \
-												sub_depar_val_out[idx][40+:8]}; \
+	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out_d1[idx][0+:8], \
+												sub_depar_val_out_d1[idx][8+:8], \
+												sub_depar_val_out_d1[idx][16+:8], \
+												sub_depar_val_out_d1[idx][24+:8], \
+												sub_depar_val_out_d1[idx][32+:8], \
+												sub_depar_val_out_d1[idx][40+:8]}; \
 
 module depar_do_deparsing #(
 	parameter	C_AXIS_DATA_WIDTH = 512,
@@ -84,6 +84,8 @@ module depar_do_deparsing #(
 	input													ctrl_s_axis_tlast
 );
 
+integer i;
+
 wire [159:0] bram_out;
 wire [6:0] parse_action_ind [0:9];
 wire [9:0] parse_action_ind_10b [0:9];
@@ -126,10 +128,30 @@ assign parse_action_ind_10b[9] = parse_action_ind[9];
 
 reg	[9:0]					sub_depar_act_valid;
 
-wire [47:0]					sub_depar_val_out [0:9];
 wire [47:0]					sub_depar_val_out_swapped [0:9];
+wire [47:0]					sub_depar_val_out [0:9];
 wire [1:0]					sub_depar_val_out_type [0:9];
 wire [9:0]					sub_depar_val_out_valid;
+reg [47:0]					sub_depar_val_out_d1 [0:9];
+reg [1:0]					sub_depar_val_out_type_d1 [0:9];
+reg [9:0]					sub_depar_val_out_valid_d1;
+
+always @(posedge clk) begin
+	if (~aresetn) begin
+		for (i=0; i<10; i=i+1) begin
+			sub_depar_val_out_d1[i] <= 0;
+			sub_depar_val_out_type_d1[i] <= 0;
+		end
+		sub_depar_val_out_valid_d1 <= 0;
+	end
+	else begin
+		for (i=0; i<10; i=i+1) begin
+			sub_depar_val_out_d1[i] <= sub_depar_val_out[i];
+			sub_depar_val_out_type_d1[i] <= sub_depar_val_out_type[i];
+		end
+		sub_depar_val_out_valid_d1 <= sub_depar_val_out_valid;
+	end
+end
 
 
 `SWAP_BYTE_ORDER(0)
@@ -158,7 +180,8 @@ localparam		IDLE=0,
 				FLUSH_PKT_3=9,
 				FLUSH_PKT=10,
 				DROP_PKT=11,
-				DROP_PKT_REMAINING=12;
+				DROP_PKT_REMAINING=12,
+				EMPTY_1=13;
 
 
 reg [C_AXIS_DATA_WIDTH-1:0]			pkts_tdata_stored_1p, pkts_tdata_stored_2p;
@@ -221,7 +244,7 @@ always @(*) begin
 				else begin
 					sub_depar_act_valid = 10'b1111111111;
 
-					state_next = FINISH_SUB_DEPARSER_0;
+					state_next = EMPTY_1;
 					pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
 					pkts_tuser_stored_1p_next = phv_fifo_out[0+:128];
 					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
@@ -233,6 +256,9 @@ always @(*) begin
 					pkts_tlast_stored_2p_next = snd_half_fifo_tlast;
 				end
 			end
+		end
+		EMPTY_1: begin
+			state_next = FINISH_SUB_DEPARSER_0;
 		end
 		FINISH_SUB_DEPARSER_0: begin
 			`SUB_DEPARSE_1P(0)

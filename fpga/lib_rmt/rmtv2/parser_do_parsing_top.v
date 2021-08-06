@@ -91,10 +91,10 @@ wire [1:0]					sub_parser_pkt_hdr_valid;
 wire [C_VLANID_WIDTH-1:0]	sub_parser_vlan_out [0:1];
 wire [1:0]					sub_parser_vlan_out_valid;
 
-wire [PKT_HDR_LEN-1:0]		fifo_pkt_hdr_out [0:1];
-reg [1:0]					fifo_rd_en;
-wire [C_VLANID_WIDTH-1:0]	fifo_vlan_out [0:1];
-reg [1:0]					fifo_vlan_rd_en;
+reg [PKT_HDR_LEN-1:0]		sub_parser_pkt_hdr_out_d1 [0:1];
+reg [1:0]					sub_parser_pkt_hdr_valid_d1;
+reg [C_VLANID_WIDTH-1:0]	sub_parser_vlan_out_d1 [0:1];
+reg [1:0]					sub_parser_vlan_out_valid_d1;
 
 generate
 	genvar i;
@@ -136,8 +136,8 @@ always @(*) begin
 	
 	out_cur_queue_next = out_cur_queue;
 
-	if (sub_parser_pkt_hdr_valid[out_cur_queue]) begin
-		pkt_hdr_vec_next = sub_parser_pkt_hdr_out[out_cur_queue];
+	if (sub_parser_pkt_hdr_valid_d1[out_cur_queue]) begin
+		pkt_hdr_vec_next = sub_parser_pkt_hdr_out_d1[out_cur_queue];
 		parser_valid_next = 1;
 		out_cur_queue_next = out_cur_queue_plus1;
 	end
@@ -169,8 +169,8 @@ always @(*) begin
 
 	vlan_out_cur_queue_next = vlan_out_cur_queue;
 
-	if (sub_parser_vlan_out_valid[vlan_out_cur_queue]) begin
-		vlan_out_next = sub_parser_vlan_out[vlan_out_cur_queue];
+	if (sub_parser_vlan_out_valid_d1[vlan_out_cur_queue]) begin
+		vlan_out_next = sub_parser_vlan_out_d1[vlan_out_cur_queue];
 		vlan_out_valid_next = 1;
 		vlan_out_cur_queue_next = vlan_out_cur_queue_plus1;
 	end
@@ -186,6 +186,25 @@ always @(posedge clk) begin
 		vlan_out_cur_queue <= vlan_out_cur_queue_next;
 		vlan_out <= vlan_out_next;
 		vlan_out_valid <= vlan_out_valid_next;
+	end
+end
+
+always @(posedge clk) begin
+	if (~aresetn) begin
+		sub_parser_pkt_hdr_out_d1[0] <= 0;
+		sub_parser_pkt_hdr_out_d1[1] <= 0;
+		sub_parser_pkt_hdr_valid_d1 <= 0;
+		sub_parser_vlan_out_d1[0] <= 0;
+		sub_parser_vlan_out_d1[1] <= 0;
+		sub_parser_vlan_out_valid_d1 <= 0;
+	end
+	else begin
+		sub_parser_pkt_hdr_out_d1[0] <= sub_parser_pkt_hdr_out[0];
+		sub_parser_pkt_hdr_out_d1[1] <= sub_parser_pkt_hdr_out[1];
+		sub_parser_pkt_hdr_valid_d1 <= sub_parser_pkt_hdr_valid;
+		sub_parser_vlan_out_d1[0] <= sub_parser_vlan_out[0];
+		sub_parser_vlan_out_d1[1] <= sub_parser_vlan_out[1];
+		sub_parser_vlan_out_valid_d1 <= sub_parser_vlan_out_valid;
 	end
 end
 

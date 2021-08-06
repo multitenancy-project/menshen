@@ -27,8 +27,10 @@ module action_engine #(
 	input								act_vlan_valid_in,
 	output reg							act_vlan_ready,
 	// vlan
-	output reg [C_VLANID_WIDTH-1:0]		vlan_out_d1,
-	output reg							vlan_out_valid_d1,
+	// output reg [C_VLANID_WIDTH-1:0]		vlan_out_d1,
+	// output reg							vlan_out_valid_d1,
+	output reg [C_VLANID_WIDTH-1:0]		vlan_out,
+	output reg							vlan_out_valid,
 	input								vlan_out_ready,
 
     //control path
@@ -63,17 +65,17 @@ wire [255:0]                alu_in_phv_remain_data;
 wire [ACT_LEN*25-1:0]       alu_in_action;
 wire                        alu_in_action_valid;
 
-reg                        alu_in_valid_d1;
-reg [width_6B*8-1:0]       alu_in_6B_1_d1;
-reg [width_6B*8-1:0]       alu_in_6B_2_d1;
-reg [width_4B*8-1:0]       alu_in_4B_1_d1;
-reg [width_4B*8-1:0]       alu_in_4B_2_d1;
-reg [width_4B*8-1:0]       alu_in_4B_3_d1;
-reg [width_2B*8-1:0]       alu_in_2B_1_d1;
-reg [width_2B*8-1:0]       alu_in_2B_2_d1;
-reg [255:0]                alu_in_phv_remain_data_d1;
-reg [ACT_LEN*25-1:0]       alu_in_action_d1;
-reg                        alu_in_action_valid_d1;
+// reg                        alu_in_valid_d1;
+// reg [width_6B*8-1:0]       alu_in_6B_1_d1;
+// reg [width_6B*8-1:0]       alu_in_6B_2_d1;
+// reg [width_4B*8-1:0]       alu_in_4B_1_d1;
+// reg [width_4B*8-1:0]       alu_in_4B_2_d1;
+// reg [width_4B*8-1:0]       alu_in_4B_3_d1;
+// reg [width_2B*8-1:0]       alu_in_2B_1_d1;
+// reg [width_2B*8-1:0]       alu_in_2B_2_d1;
+// reg [255:0]                alu_in_phv_remain_data_d1;
+// reg [ACT_LEN*25-1:0]       alu_in_action_d1;
+// reg                        alu_in_action_valid_d1;
 
 
 // output phv
@@ -84,10 +86,10 @@ wire                        alu_ready_out;
 reg							act_vlan_ready_next;
 
 reg							page_tbl_out_valid, page_tbl_out_valid_next;
-reg							page_tbl_out_valid_d1;
+// reg							page_tbl_out_valid_d1;
 // output from ram
 wire [15:0]					page_tbl_out;
-reg [15:0]					page_tbl_out_d1;
+// reg [15:0]					page_tbl_out_d1;
 
 /********intermediate variables declared here********/
 /********IPs instancilized here*********/
@@ -131,8 +133,8 @@ localparam		IDLE=0,
 				EMPTY_1=1,
 				FLUSH_VLAN=2;
 
-reg [C_VLANID_WIDTH-1:0]	vlan_out, vlan_out_next;
-reg							vlan_out_valid, vlan_out_valid_next;
+reg [C_VLANID_WIDTH-1:0]	vlan_out_next;
+reg							vlan_out_valid_next;
 reg	[1:0]					state, state_next;
 
 
@@ -165,16 +167,16 @@ always @(posedge clk) begin
 		vlan_out <= 0;
 		vlan_out_valid <= 0;
 
-		vlan_out_d1 <= 0;
-		vlan_out_valid_d1 <= 0;
+		//vlan_out_d1 <= 0;
+		//vlan_out_valid_d1 <= 0;
 	end
 	else begin
 		state <= state_next;
 		vlan_out <= vlan_out_next;
 		vlan_out_valid <= vlan_out_valid_next;
 
-		vlan_out_d1 <= vlan_out;
-		vlan_out_valid_d1 <= vlan_out_valid;
+		// vlan_out_d1 <= vlan_out;
+		// vlan_out_valid_d1 <= vlan_out_valid;
 	end
 end
 
@@ -218,38 +220,38 @@ end
 
 
 // delay 1 cycle
-always @(posedge clk) begin
-	if (~rst_n) begin
-		alu_in_valid_d1				<= 0;
-		alu_in_6B_1_d1				<= 0;
-		alu_in_6B_2_d1				<= 0;
-		alu_in_4B_1_d1				<= 0;
-		alu_in_4B_2_d1				<= 0;
-		alu_in_4B_3_d1				<= 0;
-		alu_in_2B_1_d1				<= 0;
-		alu_in_2B_2_d1				<= 0;
-		alu_in_phv_remain_data_d1	<= 0;
-		alu_in_action_d1			<= 0;
-		alu_in_action_valid_d1		<= 0;
-		page_tbl_out_valid_d1		<= 0;
-		page_tbl_out_d1				<= 0;
-	end
-	else begin
-		alu_in_valid_d1				<=	alu_in_valid;
-		alu_in_6B_1_d1				<=	alu_in_6B_1;
-		alu_in_6B_2_d1				<=	alu_in_6B_2;
-		alu_in_4B_1_d1				<=	alu_in_4B_1;
-		alu_in_4B_2_d1				<=	alu_in_4B_2;
-		alu_in_4B_3_d1				<=	alu_in_4B_3;
-		alu_in_2B_1_d1				<=	alu_in_2B_1;
-		alu_in_2B_2_d1				<=	alu_in_2B_2;
-		alu_in_phv_remain_data_d1	<=	alu_in_phv_remain_data;
-		alu_in_action_d1			<=	alu_in_action;
-		alu_in_action_valid_d1		<=	alu_in_action_valid;
-		page_tbl_out_valid_d1		<=	page_tbl_out_valid;
-		page_tbl_out_d1				<=	page_tbl_out;
-	end
-end
+// always @(posedge clk) begin
+// 	if (~rst_n) begin
+// 		alu_in_valid_d1				<= 0;
+// 		alu_in_6B_1_d1				<= 0;
+// 		alu_in_6B_2_d1				<= 0;
+// 		alu_in_4B_1_d1				<= 0;
+// 		alu_in_4B_2_d1				<= 0;
+// 		alu_in_4B_3_d1				<= 0;
+// 		alu_in_2B_1_d1				<= 0;
+// 		alu_in_2B_2_d1				<= 0;
+// 		alu_in_phv_remain_data_d1	<= 0;
+// 		alu_in_action_d1			<= 0;
+// 		alu_in_action_valid_d1		<= 0;
+// 		page_tbl_out_valid_d1		<= 0;
+// 		page_tbl_out_d1				<= 0;
+// 	end
+// 	else begin
+// 		alu_in_valid_d1				<=	alu_in_valid;
+// 		alu_in_6B_1_d1				<=	alu_in_6B_1;
+// 		alu_in_6B_2_d1				<=	alu_in_6B_2;
+// 		alu_in_4B_1_d1				<=	alu_in_4B_1;
+// 		alu_in_4B_2_d1				<=	alu_in_4B_2;
+// 		alu_in_4B_3_d1				<=	alu_in_4B_3;
+// 		alu_in_2B_1_d1				<=	alu_in_2B_1;
+// 		alu_in_2B_2_d1				<=	alu_in_2B_2;
+// 		alu_in_phv_remain_data_d1	<=	alu_in_phv_remain_data;
+// 		alu_in_action_d1			<=	alu_in_action;
+// 		alu_in_action_valid_d1		<=	alu_in_action_valid;
+// 		page_tbl_out_valid_d1		<=	page_tbl_out_valid;
+// 		page_tbl_out_d1				<=	page_tbl_out;
+// 	end
+// end
 
 //crossbar
 crossbar #(
@@ -298,10 +300,10 @@ generate
         )alu_1_6B(
             .clk(clk),
             .rst_n(rst_n),
-            .action_in(alu_in_action_d1[(gen_i+8+8+1+1)*ACT_LEN-1 -: ACT_LEN]),
-            .action_valid(alu_in_action_valid_d1),
-            .operand_1_in(alu_in_6B_1_d1[(gen_i+1) * width_6B -1 -: width_6B]),
-            .operand_2_in(alu_in_6B_2_d1[(gen_i+1) * width_6B -1 -: width_6B]),
+            .action_in(alu_in_action[(gen_i+8+8+1+1)*ACT_LEN-1 -: ACT_LEN]),
+            .action_valid(alu_in_action_valid),
+            .operand_1_in(alu_in_6B_1[(gen_i+1) * width_6B -1 -: width_6B]),
+            .operand_2_in(alu_in_6B_2[(gen_i+1) * width_6B -1 -: width_6B]),
             // .container_out(phv_out[width_4B*8+width_2B*8+356+width_6B*(gen_i+1)-1 -: width_6B]),
             .container_out(output_6B[gen_i]),
             .container_out_valid()
@@ -314,10 +316,10 @@ generate
         )alu_1_2B(
             .clk(clk),
             .rst_n(rst_n),
-            .action_in(alu_in_action_d1[(gen_i+1+1)*ACT_LEN-1 -: ACT_LEN]),
-            .action_valid(alu_in_action_valid_d1),
-            .operand_1_in(alu_in_2B_1_d1[(gen_i+1) * width_2B -1 -: width_2B]),
-            .operand_2_in(alu_in_2B_2_d1[(gen_i+1) * width_2B -1 -: width_2B]),
+            .action_in(alu_in_action[(gen_i+1+1)*ACT_LEN-1 -: ACT_LEN]),
+            .action_valid(alu_in_action_valid),
+            .operand_1_in(alu_in_2B_1[(gen_i+1) * width_2B -1 -: width_2B]),
+            .operand_2_in(alu_in_2B_2[(gen_i+1) * width_2B -1 -: width_2B]),
             // .container_out(phv_out[356+width_2B*(gen_i+1) -1 -: width_2B]),
             .container_out(output_2B[gen_i]),
             .container_out_valid()
@@ -336,14 +338,14 @@ alu_2 #(
     .rst_n(rst_n),
     //input from sub_action
     .action_in(alu_in_action[(7+8+1+1)*ACT_LEN-1 -: ACT_LEN]),
-    .action_valid(alu_in_action_valid_d1),
-    .operand_1_in(alu_in_4B_1_d1[(7+1) * width_4B -1 -: width_4B]),
-    .operand_2_in(alu_in_4B_2_d1[(7+1) * width_4B -1 -: width_4B]),
-    .operand_3_in(alu_in_4B_3_d1[(7+1) * width_4B -1 -: width_4B]),
+    .action_valid(alu_in_action_valid),
+    .operand_1_in(alu_in_4B_1[(7+1) * width_4B -1 -: width_4B]),
+    .operand_2_in(alu_in_4B_2[(7+1) * width_4B -1 -: width_4B]),
+    .operand_3_in(alu_in_4B_3[(7+1) * width_4B -1 -: width_4B]),
     .ready_out(alu_ready_out),
 	//
-	.page_tbl_out			(page_tbl_out_d1),
-	.page_tbl_out_valid		(page_tbl_out_valid_d1),
+	.page_tbl_out			(page_tbl_out),
+	.page_tbl_out_valid		(page_tbl_out_valid),
     //output to form PHV
     .container_out_w(output_4B[7]),
     .container_out_valid(),
@@ -359,10 +361,10 @@ generate
 		)alu_1_4B(
 		    .clk(clk),
 		    .rst_n(rst_n),
-		    .action_in(alu_in_action_d1[(gen_i+8+1+1)*ACT_LEN-1 -: ACT_LEN]),
-		    .action_valid(alu_in_action_valid_d1),
-		    .operand_1_in(alu_in_4B_1_d1[(gen_i+1) * width_4B -1 -: width_4B]),
-		    .operand_2_in(alu_in_4B_2_d1[(gen_i+1) * width_4B -1 -: width_4B]),
+		    .action_in(alu_in_action[(gen_i+8+1+1)*ACT_LEN-1 -: ACT_LEN]),
+		    .action_valid(alu_in_action_valid),
+		    .operand_1_in(alu_in_4B_1[(gen_i+1) * width_4B -1 -: width_4B]),
+		    .operand_2_in(alu_in_4B_2[(gen_i+1) * width_4B -1 -: width_4B]),
 		    // .container_out(phv_out[width_2B*8+356+width_4B*(gen_i+1) -1 -: width_4B]),
 		    .container_out(output_4B[gen_i]),
 		    .container_out_valid()
@@ -381,10 +383,10 @@ alu_3 #(
     .clk(clk),
     .rst_n(rst_n),
     //input data shall be metadata & com_ins
-    .comp_meta_data_in(alu_in_phv_remain_data_d1),
-    .comp_meta_data_valid_in(alu_in_valid_d1),
-    .action_in(alu_in_action_d1[24:0]),
-    .action_valid_in(alu_in_action_valid_d1),
+    .comp_meta_data_in(alu_in_phv_remain_data),
+    .comp_meta_data_valid_in(alu_in_valid),
+    .action_in(alu_in_action[24:0]),
+    .action_valid_in(alu_in_action_valid),
 
     //output is the modified metadata plus comp_ins
     // .comp_meta_data_out(phv_out[355:0]),

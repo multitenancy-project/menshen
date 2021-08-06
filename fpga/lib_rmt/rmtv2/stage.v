@@ -237,8 +237,8 @@ action_engine #(
 	.act_vlan_valid_in			(act_vlan_out_valid_r),
 	.act_vlan_ready				(act_vlan_ready),
 	// vlan
-	.vlan_out_d1(vlan_out),
-	.vlan_out_valid_d1(vlan_valid_out),
+	.vlan_out(vlan_out),
+	.vlan_out_valid(vlan_valid_out),
 	.vlan_out_ready(vlan_out_ready),
     //control path
     .c_s_axis_tdata(c_s_axis_tdata_2),

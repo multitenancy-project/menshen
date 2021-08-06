@@ -24,9 +24,9 @@ module rmt_wrapper #(
 (
 	input										clk,		// axis clk
 	input										aresetn,	
-	input  [15:0]								vlan_drop_flags,
-	output [31:0]								cookie_val,
-	output [31:0]								ctrl_token,
+	// input  [15:0]								vlan_drop_flags,
+	// output [31:0]								cookie_val,
+	// output [31:0]								ctrl_token,
 
 	/*
      * input Slave AXI Stream
@@ -156,18 +156,18 @@ wire										ctrl_s_axis_tlast_1;
 
 
 //set up a timer here
-reg [95:0] fake_timer;
-localparam FAKE_SEED = 96'hcecc666;
-
-always @(posedge clk or negedge aresetn) begin
-	if(~aresetn) begin
-		fake_timer <= FAKE_SEED + 1'b1;
-	end
-	else begin
-		fake_timer <= fake_timer + 1'b1;
-	end
-
-end
+// reg [95:0] fake_timer;
+// localparam FAKE_SEED = 96'hcecc666;
+// 
+// always @(posedge clk or negedge aresetn) begin
+// 	if(~aresetn) begin
+// 		fake_timer <= FAKE_SEED + 1'b1;
+// 	end
+// 	else begin
+// 		fake_timer <= fake_timer + 1'b1;
+// 	end
+// 
+// end
 
 
 pkt_filter #(
@@ -177,10 +177,10 @@ pkt_filter #(
 (
 	.clk(clk),
 	.aresetn(aresetn),
-	.time_stamp(fake_timer),
-	.vlan_drop_flags(vlan_drop_flags),
-	.cookie_val(cookie_val),
-	.ctrl_token(ctrl_token),
+	// .time_stamp(fake_timer),
+	// .vlan_drop_flags(vlan_drop_flags),
+	// .cookie_val(cookie_val),
+	// .ctrl_token(ctrl_token),
 
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),

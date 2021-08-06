@@ -15,6 +15,12 @@ reg [4:0]								addra;
 reg [159:0]								dataa;
 reg wr_en;
 
+wire empty, nearly_full;
+
+reg [3:0] data_in;
+reg data_rd_en, data_wr_en;
+wire [3:0] data_out;
+
 //clk signal
 localparam CYCLE = 10;
 
@@ -84,6 +90,21 @@ initial begin
     #CYCLE
     #CYCLE
     #CYCLE
+	data_in <= 4;
+	data_wr_en <= 1;
+	#CYCLE
+	data_wr_en <= 0;
+	#CYCLE
+	#CYCLE
+	#CYCLE
+	#CYCLE
+	#CYCLE
+	#CYCLE
+	#CYCLE
+	#CYCLE
+	data_rd_en <= 1;
+	#CYCLE
+	data_rd_en <= 0;
 
 
     #(40*CYCLE);
@@ -149,6 +170,27 @@ parse_act_ram_0
 	.addrb		(addrb), // TODO: note that we may change due to little or big endian
 	.doutb		(bram_out),
 	.enb		(1'b1) // always set to 1
+);
+
+
+fallthrough_small_fifo #(
+	.WIDTH(4),
+	.MAX_DEPTH_BITS(4)
+)
+fifo
+(
+	.din			(data_in),
+	.wr_en			(data_wr_en),
+
+	.dout			(data_out),
+	.rd_en			(data_rd_en),
+
+	.full			(),
+	.prog_full		(),
+	.nearly_full	(nearly_full),
+	.empty			(empty),
+	.reset			(~rst_n),
+	.clk			(clk)
 );
 
 endmodule

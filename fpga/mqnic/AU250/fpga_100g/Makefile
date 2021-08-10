@@ -32,6 +32,8 @@ JOBS=$(shell nproc)
 
 all: project run_synth run_impl
 	@echo "hh"
+gen_bit: run_synth run_impl
+	@echo "hhh"
 
 project:
 	vivado -mode batch -source tcl/create_project.tcl

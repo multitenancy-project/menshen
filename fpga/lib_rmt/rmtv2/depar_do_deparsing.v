@@ -181,7 +181,8 @@ localparam		IDLE=0,
 				FLUSH_PKT=10,
 				DROP_PKT=11,
 				DROP_PKT_REMAINING=12,
-				EMPTY_1=13;
+				EMPTY_1=13,
+				EMPTY_2=14;
 
 
 reg [C_AXIS_DATA_WIDTH-1:0]			pkts_tdata_stored_1p, pkts_tdata_stored_2p;
@@ -244,7 +245,7 @@ always @(*) begin
 				else begin
 					sub_depar_act_valid = 10'b1111111111;
 
-					state_next = EMPTY_1;
+					state_next = EMPTY_2;
 					pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
 					pkts_tuser_stored_1p_next = phv_fifo_out[0+:128];
 					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
@@ -258,6 +259,10 @@ always @(*) begin
 			end
 		end
 		EMPTY_1: begin
+			// sub_depar_act_valid = 10'b1111111111;
+			state_next = EMPTY_2;
+		end
+		EMPTY_2: begin
 			state_next = FINISH_SUB_DEPARSER_0;
 		end
 		FINISH_SUB_DEPARSER_0: begin

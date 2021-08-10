@@ -24,9 +24,8 @@ module rmt_wrapper #(
 (
 	input										clk,		// axis clk
 	input										aresetn,	
-	// input  [15:0]								vlan_drop_flags,
-	// output [31:0]								cookie_val,
-	// output [31:0]								ctrl_token,
+	input  [15:0]								vlan_drop_flags,
+	output [31:0]								ctrl_token,
 
 	/*
      * input Slave AXI Stream
@@ -156,18 +155,18 @@ wire										ctrl_s_axis_tlast_1;
 
 
 //set up a timer here
-// reg [95:0] fake_timer;
-// localparam FAKE_SEED = 96'hcecc666;
-// 
-// always @(posedge clk or negedge aresetn) begin
-// 	if(~aresetn) begin
-// 		fake_timer <= FAKE_SEED + 1'b1;
-// 	end
-// 	else begin
-// 		fake_timer <= fake_timer + 1'b1;
-// 	end
-// 
-// end
+reg [95:0] fake_timer;
+localparam FAKE_SEED = 96'hcecc666;
+
+always @(posedge clk or negedge aresetn) begin
+	if(~aresetn) begin
+		fake_timer <= FAKE_SEED + 1'b1;
+	end
+	else begin
+		fake_timer <= fake_timer + 1'b1;
+	end
+
+end
 
 
 pkt_filter #(
@@ -177,10 +176,8 @@ pkt_filter #(
 (
 	.clk(clk),
 	.aresetn(aresetn),
-	// .time_stamp(fake_timer),
-	// .vlan_drop_flags(vlan_drop_flags),
-	// .cookie_val(cookie_val),
-	// .ctrl_token(ctrl_token),
+	.vlan_drop_flags(vlan_drop_flags),
+	.ctrl_token(ctrl_token),
 
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),
@@ -637,9 +634,14 @@ wire [C_S_AXIS_DATA_WIDTH-1:0]			depar_out_tdata [C_NUM_QUEUES-1:0];
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]	depar_out_tkeep [C_NUM_QUEUES-1:0];
 wire [C_S_AXIS_TUSER_WIDTH-1:0]			depar_out_tuser [C_NUM_QUEUES-1:0];
 wire									depar_out_tvalid [C_NUM_QUEUES-1:0];
-wire 									depar_out_tready [C_NUM_QUEUES-1:0];
 wire 									depar_out_tlast [C_NUM_QUEUES-1:0];
+wire 									depar_out_tready [C_NUM_QUEUES-1:0];
 
+reg  [C_S_AXIS_DATA_WIDTH-1:0]			depar_out_tdata_d1 [C_NUM_QUEUES-1:0];
+reg  [((C_S_AXIS_DATA_WIDTH/8))-1:0]	depar_out_tkeep_d1 [C_NUM_QUEUES-1:0];
+reg  [C_S_AXIS_TUSER_WIDTH-1:0]			depar_out_tuser_d1 [C_NUM_QUEUES-1:0];
+reg 									depar_out_tvalid_d1 [C_NUM_QUEUES-1:0];
+reg  									depar_out_tlast_d1 [C_NUM_QUEUES-1:0];
 // multiple deparser + output arbiter
 generate
 	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
@@ -701,32 +703,32 @@ out_arb (
 	.m_axis_tvalid					(m_axis_tvalid),
 	.m_axis_tready					(m_axis_tready),
 	// input from deparser
-	.s_axis_tdata_0					(depar_out_tdata[0]),
-	.s_axis_tkeep_0					(depar_out_tkeep[0]),
-	.s_axis_tuser_0					(depar_out_tuser[0]),
-	.s_axis_tlast_0					(depar_out_tlast[0]),
-	.s_axis_tvalid_0				(depar_out_tvalid[0]),
+	.s_axis_tdata_0					(depar_out_tdata_d1[0]),
+	.s_axis_tkeep_0					(depar_out_tkeep_d1[0]),
+	.s_axis_tuser_0					(depar_out_tuser_d1[0]),
+	.s_axis_tlast_0					(depar_out_tlast_d1[0]),
+	.s_axis_tvalid_0				(depar_out_tvalid_d1[0]),
 	.s_axis_tready_0				(depar_out_tready[0]),
 
-	.s_axis_tdata_1					(depar_out_tdata[1]),
-	.s_axis_tkeep_1					(depar_out_tkeep[1]),
-	.s_axis_tuser_1					(depar_out_tuser[1]),
-	.s_axis_tlast_1					(depar_out_tlast[1]),
-	.s_axis_tvalid_1				(depar_out_tvalid[1]),
+	.s_axis_tdata_1					(depar_out_tdata_d1[1]),
+	.s_axis_tkeep_1					(depar_out_tkeep_d1[1]),
+	.s_axis_tuser_1					(depar_out_tuser_d1[1]),
+	.s_axis_tlast_1					(depar_out_tlast_d1[1]),
+	.s_axis_tvalid_1				(depar_out_tvalid_d1[1]),
 	.s_axis_tready_1				(depar_out_tready[1]),
 
-	.s_axis_tdata_2					(depar_out_tdata[2]),
-	.s_axis_tkeep_2					(depar_out_tkeep[2]),
-	.s_axis_tuser_2					(depar_out_tuser[2]),
-	.s_axis_tlast_2					(depar_out_tlast[2]),
-	.s_axis_tvalid_2				(depar_out_tvalid[2]),
+	.s_axis_tdata_2					(depar_out_tdata_d1[2]),
+	.s_axis_tkeep_2					(depar_out_tkeep_d1[2]),
+	.s_axis_tuser_2					(depar_out_tuser_d1[2]),
+	.s_axis_tlast_2					(depar_out_tlast_d1[2]),
+	.s_axis_tvalid_2				(depar_out_tvalid_d1[2]),
 	.s_axis_tready_2				(depar_out_tready[2]),
 
-	.s_axis_tdata_3					(depar_out_tdata[3]),
-	.s_axis_tkeep_3					(depar_out_tkeep[3]),
-	.s_axis_tuser_3					(depar_out_tuser[3]),
-	.s_axis_tlast_3					(depar_out_tlast[3]),
-	.s_axis_tvalid_3				(depar_out_tvalid[3]),
+	.s_axis_tdata_3					(depar_out_tdata_d1[3]),
+	.s_axis_tkeep_3					(depar_out_tkeep_d1[3]),
+	.s_axis_tuser_3					(depar_out_tuser_d1[3]),
+	.s_axis_tlast_3					(depar_out_tlast_d1[3]),
+	.s_axis_tvalid_3				(depar_out_tvalid_d1[3]),
 	.s_axis_tready_3				(depar_out_tready[3])
 );
 
@@ -797,6 +799,28 @@ always @(posedge clk) begin
 		stg2_vlan_valid_out_r <= stg2_vlan_valid_out;
 		stg3_vlan_out_r <= stg3_vlan_out;
 		stg3_vlan_valid_out_r <= stg3_vlan_valid_out;
+	end
+end
+
+// delay deparser out
+always @(posedge clk) begin
+	if (~aresetn) begin
+		for (idx=0; idx<C_NUM_QUEUES; idx=idx+1) begin
+			depar_out_tdata_d1[idx] <= 0;
+			depar_out_tkeep_d1[idx] <= 0;
+			depar_out_tuser_d1[idx] <= 0;
+			depar_out_tvalid_d1[idx] <= 0;
+			depar_out_tlast_d1[idx] <= 0;
+		end
+	end
+	else begin
+		for (idx=0; idx<C_NUM_QUEUES; idx=idx+1) begin
+			depar_out_tdata_d1[idx] <= depar_out_tdata[idx];
+			depar_out_tkeep_d1[idx] <= depar_out_tkeep[idx];
+			depar_out_tuser_d1[idx] <= depar_out_tuser[idx];
+			depar_out_tvalid_d1[idx] <= depar_out_tvalid[idx];
+			depar_out_tlast_d1[idx] <= depar_out_tlast[idx];
+		end
 	end
 end
 

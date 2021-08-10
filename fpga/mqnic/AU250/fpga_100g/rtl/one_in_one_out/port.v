@@ -616,9 +616,7 @@ reg tdma_enable_reg = 1'b0;
 wire tdma_locked;
 wire tdma_error;
 
-wire [31:0] cookie_val;
 wire [31:0] ctrl_token;
-
 reg [15:0] vlan_drop_flags;
 
 reg [79:0] set_tdma_schedule_start_reg = 0;
@@ -656,6 +654,9 @@ always @(posedge clk) begin
     set_tdma_schedule_period_valid_reg <= 1'b0;
     set_tdma_timeslot_period_valid_reg <= 1'b0;
     set_tdma_active_period_valid_reg <= 1'b0;
+
+	//
+	vlan_drop_flags <= 0;
 
 
     if (axil_ctrl_awvalid && axil_ctrl_wvalid && !axil_ctrl_bvalid) begin
@@ -814,9 +815,6 @@ always @(posedge clk) begin
                 16'h1044: axil_ctrl_rdata_reg <= set_tdma_active_period_reg[29:0]; // TDMA active period ns
                 16'h1048: axil_ctrl_rdata_reg <= set_tdma_active_period_reg[63:32]; // TDMA active period sec l
                 16'h104C: axil_ctrl_rdata_reg <= set_tdma_active_period_reg[79:64]; // TDMA active period sec h
-                16'h2020: begin
-                    axil_ctrl_rdata_reg <= cookie_val;
-                end
                 16'h2024: begin
                     axil_ctrl_rdata_reg <= ctrl_token;
                 end
@@ -2005,7 +2003,6 @@ if (RMT_TX_ENABLE) begin
     	.clk(clk),		// axis clk
     	.aresetn(~rst),	
         .vlan_drop_flags(vlan_drop_flags),
-        .cookie_val(cookie_val),
         .ctrl_token(ctrl_token),
 
     	// input Slave AXI Stream

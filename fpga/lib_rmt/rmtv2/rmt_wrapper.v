@@ -24,8 +24,6 @@ module rmt_wrapper #(
 (
 	input										clk,		// axis clk
 	input										aresetn,	
-	input  [15:0]								vlan_drop_flags,
-	output [31:0]								ctrl_token,
 
 	/*
      * input Slave AXI Stream
@@ -176,8 +174,6 @@ pkt_filter #(
 (
 	.clk(clk),
 	.aresetn(aresetn),
-	.vlan_drop_flags(vlan_drop_flags),
-	.ctrl_token(ctrl_token),
 
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),

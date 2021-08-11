@@ -12,10 +12,10 @@
 `define PROT_UDP		8'h11
 
 `define SUB_PARSE(idx) \
-	case(sub_parse_val_out_type[idx]) \
-		2'b01: val_2B_nxt[sub_parse_val_out_seq[idx]] = sub_parse_val_out[idx][15:0]; \
-		2'b10: val_4B_nxt[sub_parse_val_out_seq[idx]] = sub_parse_val_out[idx][31:0]; \
-		2'b11: val_6B_nxt[sub_parse_val_out_seq[idx]] = sub_parse_val_out[idx][47:0]; \
+	case(sub_parse_val_out_type_d1[idx]) \
+		2'b01: val_2B_nxt[sub_parse_val_out_seq_d1[idx]] = sub_parse_val_out_d1[idx][15:0]; \
+		2'b10: val_4B_nxt[sub_parse_val_out_seq_d1[idx]] = sub_parse_val_out_d1[idx][31:0]; \
+		2'b11: val_6B_nxt[sub_parse_val_out_seq_d1[idx]] = sub_parse_val_out_d1[idx][47:0]; \
 	endcase \
 
 `define SWAP_BYTE_ORDER(idx) \
@@ -62,12 +62,15 @@ module parser_do_parsing #(
 	output reg										vlan_out_valid
 );
 
+integer i;
+
 localparam			IDLE=0,
 					WAIT_1CYCLE_RAM=1,
 					START_SUB_PARSE=2,
 					FINISH_SUB_PARSE=3,
 					GET_PHV_OUTPUT=4,
-					OUTPUT=5;
+					OUTPUT=5,
+					EMPTY_1=6;
 					
 
 //
@@ -97,6 +100,11 @@ wire [47:0] sub_parse_val_out [0:9];
 wire [9:0] sub_parse_val_out_valid;
 wire [1:0] sub_parse_val_out_type [0:9];
 wire [2:0] sub_parse_val_out_seq [0:9];
+
+reg [47:0] sub_parse_val_out_d1 [0:9];
+reg [9:0] sub_parse_val_out_valid_d1;
+reg [1:0] sub_parse_val_out_type_d1 [0:9];
+reg [2:0] sub_parse_val_out_seq_d1 [0:9];
 
 reg [47:0] val_6B [0:7];
 reg [31:0] val_4B [0:7];
@@ -163,8 +171,10 @@ always @(*) begin
 			end
 		end
 		FINISH_SUB_PARSE: begin
+			state_next = EMPTY_1;
+		end
+		EMPTY_1: begin
 			state_next = GET_PHV_OUTPUT;
-
 			`SUB_PARSE(0)
 			`SUB_PARSE(1)
 			`SUB_PARSE(2)
@@ -175,11 +185,9 @@ always @(*) begin
 			`SUB_PARSE(7)
 			`SUB_PARSE(8)
 			`SUB_PARSE(9)
-
+			vlan_out_valid_next = 1;
 		end
 		GET_PHV_OUTPUT: begin
-			state_next = OUTPUT;
-			vlan_out_valid_next = 1;
 			pkt_hdr_vec_next ={val_6B_swapped[7], val_6B_swapped[6], val_6B_swapped[5], val_6B_swapped[4], val_6B_swapped[3], val_6B_swapped[2], val_6B_swapped[1], val_6B_swapped[0],
 							val_4B_swapped[7], val_4B_swapped[6], val_4B_swapped[5], val_4B_swapped[4], val_4B_swapped[3], val_4B_swapped[2], val_4B_swapped[1], val_4B_swapped[0],
 							val_2B_swapped[7], val_2B_swapped[6], val_2B_swapped[5], val_2B_swapped[4], val_2B_swapped[3], val_2B_swapped[2], val_2B_swapped[1], val_2B_swapped[0],
@@ -188,6 +196,14 @@ always @(*) begin
 							{115{1'b0}}, vlan_out, 1'b0, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
 							// {115{1'b0}}, vlan_id, 1'b0, tuser_1st};
 							// {128{1'b0}}, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
+							//
+			if (stg_ready_in) begin
+				parser_valid_next = 1;
+				state_next = IDLE;
+			end
+			else begin
+				state_next = OUTPUT;
+			end
 		end
 		OUTPUT: begin
 			if (stg_ready_in) begin
@@ -260,6 +276,13 @@ always @(posedge axis_clk) begin
 		val_6B[5] <= 0;
 		val_6B[6] <= 0;
 		val_6B[7] <= 0;
+
+		for (i=0; i<10; i=i+1) begin
+			sub_parse_val_out_d1[i] <= 0;
+			sub_parse_val_out_valid_d1 <= 0;
+			sub_parse_val_out_type_d1[i] <= 0;
+			sub_parse_val_out_seq_d1[i] <= 0 ;
+		end
 	end
 	else begin
 		state <= state_next;
@@ -294,6 +317,13 @@ always @(posedge axis_clk) begin
 		val_6B[5] <= val_6B_nxt[5];
 		val_6B[6] <= val_6B_nxt[6];
 		val_6B[7] <= val_6B_nxt[7];
+		//
+		for (i=0; i<10; i=i+1) begin
+			sub_parse_val_out_d1[i] <= sub_parse_val_out[i];
+			sub_parse_val_out_valid_d1 <= sub_parse_val_out_valid;
+			sub_parse_val_out_type_d1[i] <= sub_parse_val_out_type[i];
+			sub_parse_val_out_seq_d1[i] <= sub_parse_val_out_seq[i];
+		end
 	end
 end
 

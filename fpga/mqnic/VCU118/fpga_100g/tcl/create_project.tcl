@@ -5,6 +5,11 @@ set top fpga
 set device xcvu9p-flga2104-2L-e
 set proj_dir ./project_synth
 
+set public_repo_dir /home/wtao/workspace/hc20-verilog/corundum/fpga/lib_rmt/netfpga_fifo/
+
+set_property ip_repo_paths ${public_repo_dir} [current_fileset]
+update_ip_catalog
+
 #############################
 # Source files
 set SYN_FILES [list rtl/fpga.v]
@@ -12,8 +17,8 @@ lappend SYN_FILES rtl/one_in_one_out/fpga_core.v
 #
 lappend SYN_FILES rtl/debounce_switch.v
 lappend SYN_FILES rtl/sync_signal.v
-# lappend SYN_FILES rtl/one_in_one_out/interface-sprint-test.v
-lappend SYN_FILES rtl/one_in_one_out/interface.v
+lappend SYN_FILES rtl/one_in_one_out/interface-sprint-test.v
+# lappend SYN_FILES rtl/one_in_one_out/interface.v
 lappend SYN_FILES rtl/one_in_one_out/port.v
 #
 lappend SYN_FILES rtl/common/cpl_write.v
@@ -62,6 +67,7 @@ lappend SYN_FILES lib_rmt/rmtv2/rmt_wrapper.v
 lappend SYN_FILES lib_rmt/rmtv2/pkt_filter.v
 lappend SYN_FILES lib_rmt/rmtv2/cookie.v
 lappend SYN_FILES lib_rmt/rmtv2/parser_top.v
+lappend SYN_FILES lib_rmt/rmtv2/parser_do_parsing_top.v
 lappend SYN_FILES lib_rmt/rmtv2/parser_wait_segs.v
 lappend SYN_FILES lib_rmt/rmtv2/parser_do_parsing.v
 lappend SYN_FILES lib_rmt/rmtv2/sub_parser.v
@@ -78,7 +84,10 @@ lappend SYN_FILES lib_rmt/rmtv2/action/alu_2.v
 lappend SYN_FILES lib_rmt/rmtv2/action/alu_3.v
 lappend SYN_FILES lib_rmt/rmtv2/action/crossbar.v
 lappend SYN_FILES lib_rmt/rmtv2/extract/key_extract.v
-lappend SYN_FILES lib_rmt/rmtv2/lookup/lookup_engine.v
+lappend SYN_FILES lib_rmt/rmtv2/extract/key_extract_top.v
+lappend SYN_FILES lib_rmt/rmtv2/lookup/lookup_engine_top.v
+lappend SYN_FILES lib_rmt/rmtv2/lookup/lke_cam_part.v
+lappend SYN_FILES lib_rmt/rmtv2/lookup/lke_ram_part.v
 
 # XDC files
 set XDC_FILES [list fpga.xdc]

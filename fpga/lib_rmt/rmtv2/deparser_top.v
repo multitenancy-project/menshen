@@ -46,11 +46,11 @@ wire fst_half_fifo_full;
 wire fst_half_fifo_valid_in;
 wire fst_half_fifo_rd_en;
 
-reg [C_AXIS_DATA_WIDTH-1:0]			fst_half_fifo_tdata_in_r;
-reg [C_AXIS_TUSER_WIDTH-1:0]		fst_half_fifo_tuser_in_r;
-reg [C_AXIS_DATA_WIDTH/8-1:0]		fst_half_fifo_tkeep_in_r;
-reg									fst_half_fifo_tlast_in_r;
-reg									fst_half_fifo_valid_in_r;
+// reg [C_AXIS_DATA_WIDTH-1:0]			fst_half_fifo_tdata_in_r;
+// reg [C_AXIS_TUSER_WIDTH-1:0]		fst_half_fifo_tuser_in_r;
+// reg [C_AXIS_DATA_WIDTH/8-1:0]		fst_half_fifo_tkeep_in_r;
+// reg									fst_half_fifo_tlast_in_r;
+// reg									fst_half_fifo_valid_in_r;
 
 wire [C_AXIS_DATA_WIDTH-1:0]		snd_half_fifo_tdata_in, snd_half_fifo_tdata_out;
 wire [C_AXIS_TUSER_WIDTH-1:0]		snd_half_fifo_tuser_in, snd_half_fifo_tuser_out;
@@ -61,21 +61,21 @@ wire snd_half_fifo_full;
 wire snd_half_fifo_valid_in;
 wire snd_half_fifo_rd_en;
 
-reg [C_AXIS_DATA_WIDTH-1:0]			snd_half_fifo_tdata_in_r;
-reg [C_AXIS_TUSER_WIDTH-1:0]		snd_half_fifo_tuser_in_r;
-reg [C_AXIS_DATA_WIDTH/8-1:0]		snd_half_fifo_tkeep_in_r;
-reg									snd_half_fifo_tlast_in_r;
-reg									snd_half_fifo_valid_in_r;
+// reg [C_AXIS_DATA_WIDTH-1:0]			snd_half_fifo_tdata_in_r;
+// reg [C_AXIS_TUSER_WIDTH-1:0]		snd_half_fifo_tuser_in_r;
+// reg [C_AXIS_DATA_WIDTH/8-1:0]		snd_half_fifo_tkeep_in_r;
+// reg									snd_half_fifo_tlast_in_r;
+// reg									snd_half_fifo_valid_in_r;
 
 fallthrough_small_fifo #(
 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
 	.MAX_DEPTH_BITS(4)
 )
 fst_half_fifo (
-	.din				({fst_half_fifo_tdata_in_r, fst_half_fifo_tuser_in_r, fst_half_fifo_tkeep_in_r, fst_half_fifo_tlast_in_r}),
-	.wr_en				(fst_half_fifo_valid_in_r),
-	// .din				({fst_half_fifo_tdata_in, fst_half_fifo_tuser_in, fst_half_fifo_tkeep_in, fst_half_fifo_tlast_in}),
-	// .wr_en				(fst_half_fifo_valid_in),
+	// .din				({fst_half_fifo_tdata_in_r, fst_half_fifo_tuser_in_r, fst_half_fifo_tkeep_in_r, fst_half_fifo_tlast_in_r}),
+	// .wr_en				(fst_half_fifo_valid_in_r),
+	.din				({fst_half_fifo_tdata_in, fst_half_fifo_tuser_in, fst_half_fifo_tkeep_in, fst_half_fifo_tlast_in}),
+	.wr_en				(fst_half_fifo_valid_in),
 	//
 	.rd_en				(fst_half_fifo_rd_en),
 	.dout				({fst_half_fifo_tdata_out, fst_half_fifo_tuser_out, fst_half_fifo_tkeep_out, fst_half_fifo_tlast_out}),
@@ -93,10 +93,10 @@ fallthrough_small_fifo #(
 	.MAX_DEPTH_BITS(4)
 )
 snd_half_fifo (
-	.din				({snd_half_fifo_tdata_in_r, snd_half_fifo_tuser_in_r, snd_half_fifo_tkeep_in_r, snd_half_fifo_tlast_in_r}),
-	.wr_en				(snd_half_fifo_valid_in_r),
-	// .din				({snd_half_fifo_tdata_in, snd_half_fifo_tuser_in, snd_half_fifo_tkeep_in, snd_half_fifo_tlast_in}),
-	// .wr_en				(snd_half_fifo_valid_in),
+	// .din				({snd_half_fifo_tdata_in_r, snd_half_fifo_tuser_in_r, snd_half_fifo_tkeep_in_r, snd_half_fifo_tlast_in_r}),
+	// .wr_en				(snd_half_fifo_valid_in_r),
+	.din				({snd_half_fifo_tdata_in, snd_half_fifo_tuser_in, snd_half_fifo_tkeep_in, snd_half_fifo_tlast_in}),
+	.wr_en				(snd_half_fifo_valid_in),
 	//
 	.rd_en				(snd_half_fifo_rd_en),
 	.dout				({snd_half_fifo_tdata_out, snd_half_fifo_tuser_out, snd_half_fifo_tkeep_out, snd_half_fifo_tlast_out}),
@@ -146,21 +146,21 @@ wire seg_fifo_rd_en;
 wire seg_fifo_full;
 wire seg_fifo_empty;
 
-reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r;
-reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r;
-reg [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in_r;
-reg								seg_fifo_tlast_in_r;
-reg								seg_fifo_valid_in_r;
+// reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r;
+// reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r;
+// reg [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in_r;
+// reg								seg_fifo_tlast_in_r;
+// reg								seg_fifo_valid_in_r;
 // seg fifo
 fallthrough_small_fifo #(
 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
 	.MAX_DEPTH_BITS(4)
 )
 seg_fifo (
-	.din					({seg_fifo_tdata_in_r, seg_fifo_tuser_in_r, seg_fifo_tkeep_in_r, seg_fifo_tlast_in_r}),
-	.wr_en					(seg_fifo_valid_in_r),
-	// .din					({seg_fifo_tdata_in, seg_fifo_tuser_in, seg_fifo_tkeep_in, seg_fifo_tlast_in}),
-	// .wr_en					(seg_fifo_valid_in),
+	// .din					({seg_fifo_tdata_in_r, seg_fifo_tuser_in_r, seg_fifo_tkeep_in_r, seg_fifo_tlast_in_r}),
+	// .wr_en					(seg_fifo_valid_in_r),
+	.din					({seg_fifo_tdata_in, seg_fifo_tuser_in, seg_fifo_tkeep_in, seg_fifo_tlast_in}),
+	.wr_en					(seg_fifo_valid_in),
 	//
 	.rd_en					(seg_fifo_rd_en),
 	.dout					({seg_fifo_tdata_out, seg_fifo_tuser_out, seg_fifo_tkeep_out, seg_fifo_tlast_out}),
@@ -268,7 +268,7 @@ do_deparsing
 );
 
 
-
+/*
 always @(posedge axis_clk) begin
 	if (~aresetn) begin
 		//
@@ -311,7 +311,7 @@ always @(posedge axis_clk) begin
 		seg_fifo_valid_in_r <= seg_fifo_valid_in;
 	end
 end
-
+*/
 
 endmodule
 

@@ -2,7 +2,7 @@
 
 `define SUB_DEPARSE_1P(idx) \
 	if(parse_action[idx][0]) begin \
-		case(sub_depar_val_out_type_d1[idx]) \
+		case(sub_depar_val_out_type[idx]) \
 			2'b01: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
 			2'b10: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
 			2'b11: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
@@ -11,7 +11,7 @@
 
 `define SUB_DEPARSE_2P(idx) \
 	if(parse_action[idx][0]) begin \
-		case(sub_depar_val_out_type_d1[idx]) \
+		case(sub_depar_val_out_type[idx]) \
 			2'b01: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
 			2'b10: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
 			2'b11: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
@@ -19,12 +19,12 @@
 	end \
 
 `define SWAP_BYTE_ORDER(idx) \
-	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out_d1[idx][0+:8], \
-												sub_depar_val_out_d1[idx][8+:8], \
-												sub_depar_val_out_d1[idx][16+:8], \
-												sub_depar_val_out_d1[idx][24+:8], \
-												sub_depar_val_out_d1[idx][32+:8], \
-												sub_depar_val_out_d1[idx][40+:8]}; \
+	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out[idx][0+:8], \
+												sub_depar_val_out[idx][8+:8], \
+												sub_depar_val_out[idx][16+:8], \
+												sub_depar_val_out[idx][24+:8], \
+												sub_depar_val_out[idx][32+:8], \
+												sub_depar_val_out[idx][40+:8]}; \
 
 module depar_do_deparsing #(
 	parameter	C_AXIS_DATA_WIDTH = 512,
@@ -132,10 +132,11 @@ wire [47:0]					sub_depar_val_out_swapped [0:9];
 wire [47:0]					sub_depar_val_out [0:9];
 wire [1:0]					sub_depar_val_out_type [0:9];
 wire [9:0]					sub_depar_val_out_valid;
-reg [47:0]					sub_depar_val_out_d1 [0:9];
-reg [1:0]					sub_depar_val_out_type_d1 [0:9];
-reg [9:0]					sub_depar_val_out_valid_d1;
+// reg [47:0]					sub_depar_val_out_d1 [0:9];
+// reg [1:0]					sub_depar_val_out_type_d1 [0:9];
+// reg [9:0]					sub_depar_val_out_valid_d1;
 
+/*
 always @(posedge clk) begin
 	if (~aresetn) begin
 		for (i=0; i<10; i=i+1) begin
@@ -152,7 +153,7 @@ always @(posedge clk) begin
 		sub_depar_val_out_valid_d1 <= sub_depar_val_out_valid;
 	end
 end
-
+*/
 
 `SWAP_BYTE_ORDER(0)
 `SWAP_BYTE_ORDER(1)
@@ -245,7 +246,7 @@ always @(*) begin
 				else begin
 					sub_depar_act_valid = 10'b1111111111;
 
-					state_next = EMPTY_2;
+					state_next = FINISH_SUB_DEPARSER_0;
 					pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
 					pkts_tuser_stored_1p_next = phv_fifo_out[0+:128];
 					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;

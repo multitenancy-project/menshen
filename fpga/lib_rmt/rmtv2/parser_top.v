@@ -91,8 +91,9 @@ reg											segs_in_valid_r;
 
 // paser bram out
 wire [C_PARSER_RAM_WIDTH-1:0]	bram_out_0;
-reg [C_PARSER_RAM_WIDTH-1:0]	bram_out_0_d1;
-reg								out_bram_valid, out_bram_valid_d1;
+// reg [C_PARSER_RAM_WIDTH-1:0]	bram_out_0_d1;
+reg								out_bram_valid;
+// reg								out_bram_valid_d1;
 reg bram_ready, bram_ready_next;
 
 
@@ -285,8 +286,8 @@ do_parsing
 	.segs_in				(segs_in_r),
 	.segs_in_valid			(segs_in_valid_r),
 	.tuser_1st_in			(tuser_1st_in_r),
-	.bram_in				(bram_out_0_d1),
-	.bram_in_valid			(out_bram_valid_d1),
+	.bram_in				(bram_out_0),
+	.bram_in_valid			(out_bram_valid),
 
 	// .stg_ready				(stg_ready_in & ~phv_fifo_nearly_full),
 	// .stg_vlan_ready			(out_vlan_ready & ~vlan_fifo_nearly_full),
@@ -336,14 +337,14 @@ always @(posedge axis_clk) begin
 
 		out_bram_valid <= 0;
 		bram_ready <= 1;
-		out_bram_valid_d1 <= 0;
+		// out_bram_valid_d1 <= 0;
 	end
 	else begin
 
 		bram_state <= bram_state_next;
 		out_bram_valid <= out_bram_valid_next;
-		out_bram_valid_d1 <= out_bram_valid;
-		bram_out_0_d1 <= bram_out_0;
+		// out_bram_valid_d1 <= out_bram_valid;
+		// bram_out_0_d1 <= bram_out_0;
 		bram_ready <= bram_ready_next;
 	end
 end

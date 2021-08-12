@@ -308,12 +308,12 @@ module interface #
     /*
      * Transmit data output
      */
-    output wire [PORTS*AXIS_DATA_WIDTH-1:0]    tx_axis_tdata,
-    output wire [PORTS*AXIS_KEEP_WIDTH-1:0]    tx_axis_tkeep,
-    output wire [PORTS-1:0]                    tx_axis_tvalid,
+    output reg [PORTS*AXIS_DATA_WIDTH-1:0]    tx_axis_tdata,
+    output reg [PORTS*AXIS_KEEP_WIDTH-1:0]    tx_axis_tkeep,
+    output reg [PORTS-1:0]                    tx_axis_tvalid,
     input  wire [PORTS-1:0]                    tx_axis_tready,
-    output wire [PORTS-1:0]                    tx_axis_tlast,
-    output wire [PORTS-1:0]                    tx_axis_tuser,
+    output reg [PORTS-1:0]                    tx_axis_tlast,
+    output reg [PORTS-1:0]                    tx_axis_tuser,
 
     /*
      * Transmit timestamp input
@@ -804,6 +804,14 @@ assign axil_ctrl_arready = axil_ctrl_arready_reg;
 assign axil_ctrl_rdata = axil_ctrl_rdata_reg;
 assign axil_ctrl_rresp = axil_ctrl_rresp_reg;
 assign axil_ctrl_rvalid = axil_ctrl_rvalid_reg;
+
+
+// Tao:
+wire [PORTS*AXIS_DATA_WIDTH-1:0]    tx_axis_tdata_w;
+wire [PORTS*AXIS_KEEP_WIDTH-1:0]    tx_axis_tkeep_w;
+wire [PORTS-1:0]                    tx_axis_tvalid_w;
+wire [PORTS-1:0]                    tx_axis_tlast_w;
+wire [PORTS-1:0]					tx_axis_tuser_w;
 
 always @(posedge clk) begin
     axil_ctrl_awready_reg <= 1'b0;
@@ -2208,13 +2216,13 @@ generate
             /*
              * Transmit data output
              */
-            .tx_axis_tdata(tx_axis_tdata[n*AXIS_DATA_WIDTH +: AXIS_DATA_WIDTH]),
-            .tx_axis_tkeep(tx_axis_tkeep[n*AXIS_KEEP_WIDTH +: AXIS_KEEP_WIDTH]),
-            .tx_axis_tvalid(tx_axis_tvalid[n +: 1]),
+            .tx_axis_tdata(tx_axis_tdata_w[n*AXIS_DATA_WIDTH +: AXIS_DATA_WIDTH]),
+            .tx_axis_tkeep(tx_axis_tkeep_w[n*AXIS_KEEP_WIDTH +: AXIS_KEEP_WIDTH]),
+            .tx_axis_tvalid(tx_axis_tvalid_w[n +: 1]),
             .tx_axis_tready(tx_axis_tready[n +: 1]),
-            .tx_axis_tlast(tx_axis_tlast[n +: 1]),
+            .tx_axis_tlast(tx_axis_tlast_w[n +: 1]),
             //this is slightly different from NetFPGA since there is 1 bit in tuser
-            .tx_axis_tuser(tx_axis_tuser[n +: 1]),
+            .tx_axis_tuser(tx_axis_tuser_w[n +: 1]),
 
             /*
              * Transmit timestamp input
@@ -2251,5 +2259,23 @@ generate
     end
 
 endgenerate
+
+always @(posedge clk) begin
+	if (rst) begin
+		tx_axis_tdata <= 0;
+		tx_axis_tkeep <= 0;
+		tx_axis_tvalid <= 0;
+		tx_axis_tlast <= 0;
+		tx_axis_tuser <= 0;
+	end
+	else begin
+		tx_axis_tdata <=  tx_axis_tdata_w;
+		tx_axis_tkeep <=  tx_axis_tkeep_w;
+		tx_axis_tvalid <= tx_axis_tvalid_w;
+		tx_axis_tlast <=  tx_axis_tlast_w;
+		tx_axis_tuser <=  tx_axis_tuser_w;
+	end
+end
+
 
 endmodule

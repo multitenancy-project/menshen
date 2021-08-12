@@ -36,6 +36,8 @@ all: project run_synth run_impl
 project:
 	vivado -mode batch -source tcl/create_project.tcl
 
+gen_bit: run_synth run_impl
+
 run_synth:
 	vivado -mode batch -source tcl/run_synth.tcl -tclargs ${JOBS}
 

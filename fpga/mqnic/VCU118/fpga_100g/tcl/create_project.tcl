@@ -5,11 +5,6 @@ set top fpga
 set device xcvu9p-flga2104-2L-e
 set proj_dir ./project_synth
 
-set public_repo_dir /home/wtao/workspace/hc20-verilog/corundum/fpga/lib_rmt/netfpga_fifo/
-
-set_property ip_repo_paths ${public_repo_dir} [current_fileset]
-update_ip_catalog
-
 #############################
 # Source files
 set SYN_FILES [list rtl/fpga.v]

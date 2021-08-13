@@ -320,7 +320,9 @@ module port #
      * PTP clock
      */
     input  wire [PTP_TS_WIDTH-1:0]              ptp_ts_96,
-    input  wire                                 ptp_ts_step
+    input  wire                                 ptp_ts_step,
+	output reg [15:0]							vlan_drop_flags,
+	input wire [31:0]							ctrl_token
 );
 
 parameter DMA_CLIENT_TAG_WIDTH = $clog2(TX_DESC_TABLE_SIZE > RX_DESC_TABLE_SIZE ? TX_DESC_TABLE_SIZE : RX_DESC_TABLE_SIZE);
@@ -616,8 +618,6 @@ reg tdma_enable_reg = 1'b0;
 wire tdma_locked;
 wire tdma_error;
 
-wire [31:0] ctrl_token;
-reg [15:0] vlan_drop_flags;
 
 reg [79:0] set_tdma_schedule_start_reg = 0;
 reg set_tdma_schedule_start_valid_reg = 0;
@@ -2001,8 +2001,8 @@ if (RMT_TX_ENABLE) begin
     (
     	.clk(clk),		// axis clk
     	.aresetn(~rst),	
-        .vlan_drop_flags(vlan_drop_flags),
-        .ctrl_token(ctrl_token),
+        // .vlan_drop_flags(vlan_drop_flags),
+        // .ctrl_token(ctrl_token),
 
     	// input Slave AXI Stream
     	.s_axis_tdata(tx_axis_tdata_int_2),

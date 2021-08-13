@@ -24,6 +24,8 @@ module rmt_wrapper #(
 (
 	input										clk,		// axis clk
 	input										aresetn,	
+	input [15:0]								vlan_drop_flags,
+	output [31:0]								ctrl_token,
 
 	/*
      * input Slave AXI Stream
@@ -175,6 +177,9 @@ pkt_filter #(
 	.clk(clk),
 	.aresetn(aresetn),
 
+	.vlan_drop_flags(vlan_drop_flags),
+	.ctrl_token(ctrl_token),
+
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),
 	.s_axis_tkeep(s_axis_tkeep),
@@ -225,6 +230,7 @@ assign s_axis_tready_f = !pkt_fifo_nearly_full[0] ||
 							!pkt_fifo_nearly_full[2] ||
 							!pkt_fifo_nearly_full[3];
 
+/*
 generate 
 	genvar i;
 	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
@@ -247,6 +253,34 @@ generate
   			.empty			(pkt_fifo_empty[i]),              // output wire empty
   			.wr_rst_busy	(),  // output wire wr_rst_busy
   			.rd_rst_busy	()  // output wire rd_rst_busy
+		);
+	end
+endgenerate
+*/
+generate 
+	genvar i;
+	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
+		sub_pkt_fifo
+		fallthrough_small_fifo #(
+			.WIDTH(C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH+C_S_AXIS_DATA_WIDTH/8+1),
+			.MAX_DEPTH_BITS(4)
+		)
+		pkt_fifo (
+			.clk			(clk),                  // input wire clk
+  			.reset			(~aresetn),                // input wire srst
+  			.din			({parser_m_axis_tdata[i],
+								parser_m_axis_tuser[i],
+								parser_m_axis_tkeep[i],
+								parser_m_axis_tlast[i]}),                  // input wire [704 : 0] din
+  			.wr_en			(parser_m_axis_tvalid[i]),              // input wire wr_en
+  			.rd_en			(pkt_fifo_rd_en[i]),              // input wire rd_en
+  			.dout			({pkt_fifo_tdata_out[i],
+								pkt_fifo_tuser_out[i],
+								pkt_fifo_tkeep_out[i],
+								pkt_fifo_tlast_out[i]}),                // output wire [704 : 0] dout
+			.full			(),
+  			.nearly_full	(pkt_fifo_nearly_full[i]),                // output wire full
+  			.empty			(pkt_fifo_empty[i])              // output wire empty
 		);
 	end
 endgenerate

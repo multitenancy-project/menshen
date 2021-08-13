@@ -403,6 +403,23 @@ endfunction
 
 assign tx_axis_tuser = 0;
 
+wire [15:0]			vlan_drop_flags;
+reg [15:0]			vlan_drop_flags_r;
+wire [31:0]			ctrl_token;
+
+reg [31:0]			ctrl_token_r;
+
+always @(posedge clk) begin
+	if (rst) begin
+		ctrl_token_r <= 0;
+		vlan_drop_flags_r <= 0;
+	end
+	else begin
+		ctrl_token_r <= ctrl_token;
+		vlan_drop_flags_r <= vlan_drop_flags;
+	end
+end
+
 if (RMT_TX_ENABLE) begin
 
     rmt_wrapper
@@ -410,6 +427,9 @@ if (RMT_TX_ENABLE) begin
     (
     	.clk(clk),		// axis clk
     	.aresetn(~rst),	
+
+        .vlan_drop_flags(vlan_drop_flags_r),
+        .ctrl_token(ctrl_token),
 
     	// input Slave AXI Stream
     	.s_axis_tdata(rx_axis_tdata),
@@ -2301,7 +2321,10 @@ generate
              * PTP clock
              */
             .ptp_ts_96(ptp_ts_96),
-            .ptp_ts_step(ptp_ts_step)
+            .ptp_ts_step(ptp_ts_step),
+
+			.vlan_drop_flags(vlan_drop_flags),
+			.ctrl_token(ctrl_token_r)
         );
 
     end

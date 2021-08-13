@@ -13,6 +13,9 @@ module pkt_filter #(
 	input				clk,
 	input				aresetn,
 
+	input [31:0]		vlan_drop_flags,
+	output [31:0]		ctrl_token,
+
 
 	// input Slave AXI Stream
 	input [C_S_AXIS_DATA_WIDTH-1:0]			s_axis_tdata,
@@ -67,12 +70,14 @@ reg									vlan_id_valid_next;
 
 //for security and reliability 
 
+reg									ctrl_token_r, ctrl_token_next;
 
 //checkme: for dropping packets during reconf
 wire [11:0]							vlan_id_w;
 wire [31:0]							vlan_id_one_hot_w;
 
 assign w_c_switch = c_switch;
+assign ctrl_token = ctrl_token_r;
 
 assign vlan_id_w = s_axis_tdata[116 +: 12];
 assign vlan_id_one_hot_w = (1'b1 << vlan_id_w[8:4]); 
@@ -92,6 +97,8 @@ always @(*) begin
 
 	state_next = state;
 
+	ctrl_token_next = ctrl_token_r;
+
 	case (state) 
 		WAIT_FIRST_PKT: begin
 			if (m_axis_tready && s_axis_tvalid) begin
@@ -103,6 +110,7 @@ always @(*) begin
 						state_next = FLUSH_CTL;
 						c_switch = 1'b1;
 						//modify token once its true
+						ctrl_token_next = ctrl_token_r+1;
 					end
 					else if (!s_axis_tlast) begin
 						//checkme: if this vlan is not configed, send it
@@ -187,10 +195,13 @@ always @(posedge clk or negedge aresetn) begin
 		//
 		vlan_id <= 0;
 		vlan_id_valid <= 0;
+		//
+		ctrl_token_r <= 0;
 	end
 
 	else begin
 		state <= state_next;
+		ctrl_token_r <= ctrl_token_next;
 
 		if(!w_c_switch) begin // data pkt
 			m_axis_tdata <= r_tdata;

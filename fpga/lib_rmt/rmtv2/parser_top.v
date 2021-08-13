@@ -33,8 +33,8 @@ module parser_top #(
 	input									stg_ready_in,
 
 	// output vlan
-	output [C_VLANID_WIDTH-1:0]				out_vlan,
-	output 									out_vlan_valid,
+	output reg[C_VLANID_WIDTH-1:0]				out_vlan,
+	output reg									out_vlan_valid,
 	input									out_vlan_ready,
 
 	// output to different pkt fifo queues (i.e., data cache)
@@ -91,9 +91,8 @@ reg											segs_in_valid_r;
 
 // paser bram out
 wire [C_PARSER_RAM_WIDTH-1:0]	bram_out_0;
-// reg [C_PARSER_RAM_WIDTH-1:0]	bram_out_0_d1;
-reg								out_bram_valid;
-// reg								out_bram_valid_d1;
+reg [C_PARSER_RAM_WIDTH-1:0]	bram_out_0_d1;
+reg								out_bram_valid, out_bram_valid_d1;
 reg bram_ready, bram_ready_next;
 
 
@@ -188,6 +187,19 @@ end
 
 // ==================================================
 
+wire [C_VLANID_WIDTH-1:0]				parser_out_vlan, vlan_fifo_out;
+wire									parser_out_vlan_valid;
+wire	vlan_fifo_empty, vlan_fifo_nearly_full;
+reg [C_VLANID_WIDTH-1:0] out_vlan_next;
+reg out_vlan_valid_next;
+reg		vlan_fifo_rd_en;
+
+wire [PKT_HDR_LEN-1:0]		phv_fifo_out;
+wire	phv_fifo_empty, phv_fifo_nearly_full;
+reg		phv_fifo_rd_en;
+
+
+
 localparam P_IDLE=0;
 
 reg [1:0] p_state, p_state_next;
@@ -204,10 +216,10 @@ assign p_cur_queue_val[3] = (p_cur_queue==3)?1:0;
 
 wire parser_valid_w;
 wire [PKT_HDR_LEN-1:0] pkt_hdr_vec_w;
-reg [PKT_HDR_LEN-1:0] pkt_hdr_vec_next;
-reg parser_valid_next;
+reg [PKT_HDR_LEN-1:0] pkt_hdr_vec_next, pkt_hdr_vec_r;
+reg parser_valid_next, parser_valid_r;
 
-
+/*
 always @(*) begin
 	p_state_next = p_state;
 	p_cur_queue_next = p_cur_queue;
@@ -224,6 +236,30 @@ always @(*) begin
 			end
 		end
 	endcase
+end*/
+
+always @(*) begin
+	p_cur_queue_next = p_cur_queue;
+	pkt_hdr_vec_next = phv_fifo_out;
+	out_vlan_next = vlan_fifo_out;
+	parser_valid_next = 0;
+	out_vlan_valid_next = 0;
+
+	phv_fifo_rd_en = 0;
+	vlan_fifo_rd_en = 0;
+	if (!phv_fifo_empty) begin
+		pkt_hdr_vec_next = {phv_fifo_out[PKT_HDR_LEN-1:145], p_cur_queue_val, phv_fifo_out[0+:141]};
+		parser_valid_next = 1;
+		phv_fifo_rd_en = 1;
+
+		p_cur_queue_next = p_cur_queue_plus1;
+	end
+
+	if (!vlan_fifo_empty) begin
+		out_vlan_next = vlan_fifo_out;
+		vlan_fifo_rd_en = 1;
+		out_vlan_valid_next = 1;
+	end
 end
 
 always @(posedge axis_clk) begin
@@ -233,12 +269,22 @@ always @(posedge axis_clk) begin
 		pkt_hdr_vec <= 0;
 		parser_valid <= 0;
 
+		out_vlan <= 0;
+		out_vlan_valid <= 0;
+
+		pkt_hdr_vec_r <= 0;
+		parser_valid_r <= 0;
 	end
 	else begin
 		p_state <= p_state_next;
 		p_cur_queue <= p_cur_queue_next;
-		pkt_hdr_vec <= pkt_hdr_vec_next;
-		parser_valid <= parser_valid_next;
+		pkt_hdr_vec_r <= pkt_hdr_vec_next;
+		parser_valid_r <= parser_valid_next;
+		pkt_hdr_vec <= pkt_hdr_vec_r;
+		parser_valid <= parser_valid_r;
+
+		out_vlan <= out_vlan_next;
+		out_vlan_valid <= out_vlan_valid_next;
 	end
 end
 
@@ -286,19 +332,17 @@ do_parsing
 	.segs_in				(segs_in_r),
 	.segs_in_valid			(segs_in_valid_r),
 	.tuser_1st_in			(tuser_1st_in_r),
-	.bram_in				(bram_out_0),
-	.bram_in_valid			(out_bram_valid),
+	.bram_in				(bram_out_0_d1),
+	.bram_in_valid			(out_bram_valid_d1),
 
-	// .stg_ready				(stg_ready_in & ~phv_fifo_nearly_full),
-	// .stg_vlan_ready			(out_vlan_ready & ~vlan_fifo_nearly_full),
-	.stg_ready				(stg_ready_in),
-	.stg_vlan_ready			(out_vlan_ready),
+	.stg_ready				(stg_ready_in & ~phv_fifo_nearly_full),
+	.stg_vlan_ready			(out_vlan_ready & ~vlan_fifo_nearly_full),
 
 	// output
 	.pkt_hdr_vec			(pkt_hdr_vec_w),
 	.parser_valid			(parser_valid_w),
-	.vlan_out				(out_vlan),
-	.vlan_out_valid			(out_vlan_valid)
+	.vlan_out				(parser_out_vlan),
+	.vlan_out_valid			(parser_out_vlan_valid)
 );
 
 //
@@ -337,17 +381,52 @@ always @(posedge axis_clk) begin
 
 		out_bram_valid <= 0;
 		bram_ready <= 1;
-		// out_bram_valid_d1 <= 0;
+		out_bram_valid_d1 <= 0;
 	end
 	else begin
 
 		bram_state <= bram_state_next;
 		out_bram_valid <= out_bram_valid_next;
-		// out_bram_valid_d1 <= out_bram_valid;
-		// bram_out_0_d1 <= bram_out_0;
+		out_bram_valid_d1 <= out_bram_valid;
+		bram_out_0_d1 <= bram_out_0;
 		bram_ready <= bram_ready_next;
 	end
 end
+
+// fifo
+fallthrough_small_fifo #(
+	.WIDTH(PKT_HDR_LEN),
+	.MAX_DEPTH_BITS(4)
+)
+pkt_hdr_fifo (
+	.din				(pkt_hdr_vec_w),
+	.wr_en				(parser_valid_w),
+	
+	.dout				(phv_fifo_out),
+	.rd_en				(phv_fifo_rd_en),
+	.full				(),
+	.nearly_full		(phv_fifo_nearly_full),
+	.empty				(phv_fifo_empty),
+	.reset				(~aresetn),
+	.clk				(axis_clk)
+);
+
+fallthrough_small_fifo #(
+	.WIDTH(PKT_HDR_LEN),
+	.MAX_DEPTH_BITS(4)
+)
+vlan_fifo (
+	.din				(parser_out_vlan),
+	.wr_en				(parser_out_vlan_valid),
+	
+	.dout				(vlan_fifo_out),
+	.rd_en				(vlan_fifo_rd_en),
+	.full				(),
+	.nearly_full		(vlan_fifo_nearly_full),
+	.empty				(vlan_fifo_empty),
+	.reset				(~aresetn),
+	.clk				(axis_clk)
+);
 
 /*================Control Path====================*/
 wire [7:0]          mod_id; //module ID

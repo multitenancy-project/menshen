@@ -22,3 +22,5 @@ data/
 ip_proj/
 project_sim/
 project_pktgen/
+
+export_sim/

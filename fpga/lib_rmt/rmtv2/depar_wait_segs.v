@@ -77,15 +77,15 @@ always @(*) begin
 
 	pkt_fifo_rd_en = 0;
 
-	fst_half_tdata_next = fst_half_tdata;
-	fst_half_tuser_next = fst_half_tuser;
-	fst_half_tkeep_next = fst_half_tkeep;
-	fst_half_tlast_next = fst_half_tlast;
+	fst_half_tdata_next = 0;
+	fst_half_tuser_next = 0;
+	fst_half_tkeep_next = 0;
+	fst_half_tlast_next = 0;
 
-	snd_half_tdata_next = snd_half_tdata;
-	snd_half_tuser_next = snd_half_tuser;
-	snd_half_tkeep_next = snd_half_tkeep;
-	snd_half_tlast_next = snd_half_tlast;
+	snd_half_tdata_next = 0;
+	snd_half_tuser_next = 0;
+	snd_half_tkeep_next = 0;
+	snd_half_tlast_next = 0;
 
 	fst_half_valid_next = 0;
 	snd_half_valid_next = 0;

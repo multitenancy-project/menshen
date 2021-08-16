@@ -139,5 +139,7 @@ set_property -name {xsim.simulate.runtime} -value {10000ns} -objects [get_filese
 
 launch_simulation -simset sim_1 -mode behavioral
 run 10us
+#
+# export_simulation -simulator xsim -force
 
 exit

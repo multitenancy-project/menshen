@@ -66,8 +66,8 @@ wire [PKT_VEC_WIDTH-1:0]			stg2_phv_out;
 wire								stg2_phv_out_valid;
 wire [PKT_VEC_WIDTH-1:0]			stg3_phv_out;
 wire								stg3_phv_out_valid;
-wire [PKT_VEC_WIDTH-1:0]			stg4_phv_out;
-wire								stg4_phv_out_valid;
+// wire [PKT_VEC_WIDTH-1:0]			stg4_phv_out;
+// wire								stg4_phv_out_valid;
 
 reg [PKT_VEC_WIDTH-1:0]				stg0_phv_in_d1;
 reg [PKT_VEC_WIDTH-1:0]				stg0_phv_out_d1;
@@ -225,9 +225,9 @@ wire [C_NUM_QUEUES-1:0]				pkt_fifo_rd_en;
 wire [C_NUM_QUEUES-1:0]				pkt_fifo_nearly_full;
 wire [C_NUM_QUEUES-1:0]				pkt_fifo_empty;
 
-assign s_axis_tready_f = !pkt_fifo_nearly_full[0] ||
-							!pkt_fifo_nearly_full[1] ||
-							!pkt_fifo_nearly_full[2] ||
+assign s_axis_tready_f = !pkt_fifo_nearly_full[0] &&
+							!pkt_fifo_nearly_full[1] &&
+							!pkt_fifo_nearly_full[2] &&
 							!pkt_fifo_nearly_full[3];
 
 /*

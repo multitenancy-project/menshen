@@ -22,7 +22,7 @@ module pkt_filter #(
 	input [((C_S_AXIS_DATA_WIDTH/8))-1:0]	s_axis_tkeep,
 	input [C_S_AXIS_TUSER_WIDTH-1:0]		s_axis_tuser,
 	input									s_axis_tvalid,
-	output	reg 							s_axis_tready,
+	output									s_axis_tready,
 	input									s_axis_tlast,
 
 	// output Master AXI Stream
@@ -44,6 +44,8 @@ module pkt_filter #(
 	output reg									c_m_axis_tlast
 
 );
+
+assign s_axis_tready = m_axis_tready;
 
 
 localparam WAIT_FIRST_PKT=0, 
@@ -90,7 +92,7 @@ always @(*) begin
 	r_tlast = s_axis_tlast;
 
 	r_tvalid = s_axis_tvalid;
-	r_s_tready = m_axis_tready;
+	// r_s_tready = m_axis_tready;
 
 	c_switch = 1'b0;
 	vlan_id_valid_next = 0;
@@ -190,7 +192,7 @@ always @(posedge clk or negedge aresetn) begin
 		c_m_axis_tlast <= 0;
 
 		c_m_axis_tvalid <= 0;
-		s_axis_tready <= 0;
+		// s_axis_tready <= 0;
 
 		//
 		vlan_id <= 0;
@@ -210,7 +212,7 @@ always @(posedge clk or negedge aresetn) begin
 			m_axis_tlast <= r_tlast;
 			m_axis_tvalid <= r_tvalid;
 
-			s_axis_tready <= r_s_tready;
+			// s_axis_tready <= r_s_tready;
 			//reset control path output 
 			c_m_axis_tdata <= 0;
 			c_m_axis_tkeep <= 0;

@@ -293,6 +293,12 @@ initial begin
     s_axis_tuser <= 128'h00000000000000000000000000000040;
     s_axis_tvalid <= 1'b1;
     s_axis_tlast <= 1'b1;
+	// #CYCLE
+    // s_axis_tdata <= 512'h11; 
+    // s_axis_tkeep <= 64'h0000000000000001;
+    // s_axis_tuser <= 128'h00000000000000000000000000000040;
+    // s_axis_tvalid <= 1'b1;
+    // s_axis_tlast <= 1'b1;
 	#CYCLE
 	s_axis_tdata <= 0;
 	s_axis_tkeep <= 0;

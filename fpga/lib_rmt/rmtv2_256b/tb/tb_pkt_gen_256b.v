@@ -36,6 +36,7 @@ initial begin
 	aresetn = 1;
 	start = 0;
 	pkt_len = 2;
+	m_axis_tready = 1;
 
 	#100;
 	aresetn = 0; // reset all the values
@@ -85,8 +86,7 @@ reg [63:0] byte_counter;
 always @(*) begin
 	s_axis_tvalid = 0;
 	s_axis_tlast = 0;
-	s_axis_tuser = 0;
-	if (start) begin
+	if (start && s_axis_tready) begin
 		s_axis_tvalid = 1;
 		if (c_counter == 0) begin
 			s_axis_tvalid = 1;
@@ -95,12 +95,14 @@ always @(*) begin
 			s_axis_tkeep = {32{1'b1}};
 		end
 		else begin
-			s_axis_tdata = 256'h000000000000000004000000020000000d009a201a0013001300090000006f6f;
+			s_axis_tdata = c_counter + counter;
+			// s_axis_tkeep = 1;
 			s_axis_tkeep = {32{1'b1}};
 		end
 		
 		if (c_counter == pkt_len-1) begin
 			s_axis_tkeep = {32{1'b1}};
+			// s_axis_tkeep = 1;
 			s_axis_tlast = 1;
 		end
 	end
@@ -108,7 +110,7 @@ end
 
 always @(posedge clk) begin
 	if (~aresetn) begin
-		counter <= 0;
+		counter <= 1;
 		c_counter <= 0;
 		cycle_counter <= 0;
 	end
@@ -129,17 +131,37 @@ end
 // check
 reg [63:0] check_seq_counter;
 reg [63:0] check_counter;
-
-always @(posedge clk) begin
-	if (~aresetn) begin
+reg [2:0] pk_start;
+always@(posedge clk) begin
+	if(~aresetn) begin
 		check_counter <= 0;
 		check_seq_counter <= 1;
+		pk_start <= 1;
 		byte_counter <= 0;
 	end
-	else begin
-		if (m_axis_tvalid) begin
-			check_counter <= check_counter + 1;
-			byte_counter <= byte_counter + 64;
+	if(m_axis_tvalid) begin
+		check_counter <= check_counter +1;
+		byte_counter <= byte_counter + 512/8;
+		if(pk_start == 1) begin
+			pk_start <= 2;
+		end
+		else if (pk_start == 2) begin
+			check_seq_counter = m_axis_tdata - check_counter;
+			pk_start <= 0;
+		end
+		else if(!m_axis_tlast) begin
+			if(m_axis_tkeep != {32{1'b1}}) begin
+				$display("ERROR in compare %x with %x", m_axis_tdata, check_counter + check_seq_counter);
+			end
+		end
+		else if(m_axis_tlast) begin
+			if(m_axis_tkeep != {32{1'b1}}) begin
+				$display("ERROR in compare %x with %x", m_axis_tdata, check_counter + check_seq_counter);
+			end
+			$display("DEBUG, received: %d", m_axis_tdata);
+			pk_start <= 1;
+			check_counter <= 0;
+			check_seq_counter <= check_seq_counter + 1; 
 		end
 	end
 end

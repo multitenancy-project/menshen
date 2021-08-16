@@ -1,5 +1,5 @@
 set design TProj
-set sim_top tb/tb_pkt_gen.v
+set sim_top tb/tb_pkt_gen_256b.v
 set device xc7vx690t-3-ffg1761
 set proj_dir ./project_pktgen
 set public_repo_dir $::env(SUME_FOLDER)/lib/hw/
@@ -84,15 +84,16 @@ read_vhdl -library cam  ../xilinx_cam/dmem.vhd
 read_vhdl -library cam  [glob ../xilinx_cam/cam*.vhd]
 
 # rmt-related
-read_verilog "./orig_pkt_filter.v"
-read_verilog "./sub_parser.v"
-read_verilog "./parser_top.v"
-read_verilog "./parser_do_parsing.v"
-read_verilog "./parser_wait_segs.v"
 read_verilog "./sub_deparser.v"
 read_verilog "./deparser_top.v"
-read_verilog "./depar_do_deparsing.v"
 read_verilog "./depar_wait_segs.v"
+read_verilog "./depar_do_deparsing.v"
+read_verilog "./parser_do_parsing.v"
+read_verilog "./parser_wait_segs.v"
+read_verilog "./sub_parser.v"
+read_verilog "./parser_top.v"
+# read_verilog "./TProj.src/lib_rmt_256b/rmtv2_256b/orig_pkt_filter.v"
+read_verilog "./pkt_filter.v"
 read_verilog "./rmt_wrapper.v"
 read_verilog "./lib_rmtv2/stage.v"
 read_verilog "./lib_rmtv2/last_stage.v"
@@ -103,9 +104,12 @@ read_verilog "./lib_rmtv2/action/alu_2.v"
 read_verilog "./lib_rmtv2/action/alu_3.v"
 read_verilog "./lib_rmtv2/action/crossbar.v"
 read_verilog "./lib_rmtv2/extract/key_extract.v"
-read_verilog "./lib_rmtv2/lookup/lookup_engine.v"
+read_verilog "./lib_rmtv2/extract/key_extract_top.v"
+read_verilog "./lib_rmtv2/lookup/lookup_engine_top.v"
+read_verilog "./lib_rmtv2/lookup/lke_cam_part.v"
+read_verilog "./lib_rmtv2/lookup/lke_ram_part.v"
 ###
-read_verilog "./tb/tb_pkt_gen.v"
+read_verilog "./tb/tb_pkt_gen_256b.v"
 
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1

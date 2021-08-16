@@ -89,7 +89,7 @@ fallthrough_small_fifo #(
 pkt_fifo
 (
 	.din									({s_axis_tdata, s_axis_tuser, s_axis_tkeep, s_axis_tlast}),
-	.wr_en									(s_axis_tvalid & ~pkt_fifo_nearly_full),
+	.wr_en									(s_axis_tvalid),
 	.rd_en									(pkt_fifo_rd_en),
 	.dout									({tdata_fifo, tuser_fifo, tkeep_fifo, tlast_fifo}),
 	.full									(),
@@ -101,7 +101,7 @@ pkt_fifo
 );
 
 
-assign s_axis_tready = ~pkt_fifo_nearly_full;
+assign s_axis_tready = ~pkt_fifo_nearly_full && m_axis_tready;
 
 always @(*) begin
 

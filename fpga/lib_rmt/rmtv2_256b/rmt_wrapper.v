@@ -15,6 +15,9 @@ module rmt_wrapper #(
 	input									clk,		// axis clk
 	input									aresetn,	
 
+	input [31:0]							vlan_drop_flags,
+	output reg [31:0]							ctrl_token,
+
 	// input Slave AXI Stream
 	input [C_S_AXIS_DATA_WIDTH-1:0]				s_axis_tdata,
 	input [((C_S_AXIS_DATA_WIDTH/8))-1:0]		s_axis_tkeep,
@@ -154,6 +157,17 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_7;
 wire 										ctrl_s_axis_tvalid_7;
 wire 										ctrl_s_axis_tlast_7;
 
+wire [31:0]			ctrl_token_w;
+
+always @(posedge clk) begin
+	if (~aresetn) begin
+		ctrl_token <= 0;
+	end
+	else begin
+		ctrl_token <= ctrl_token_w;
+	end
+end
+
 
 pkt_filter #(
 	.C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
@@ -162,6 +176,9 @@ pkt_filter #(
 (
 	.clk(clk),
 	.aresetn(aresetn),
+
+	.vlan_drop_flags(vlan_drop_flags),
+	.ctrl_token(ctrl_token_w),
 
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),
@@ -591,7 +608,7 @@ generate
 			// output from STAGE
 			.pkt_fifo_rd_en			(pkt_fifo_rd_en[i]),
 		
-			.phv_fifo_out			(last_stg_phv_out[i]),
+			.phv_fifo_out			(phv_fifo_out[i]),
 			.phv_fifo_empty			(phv_fifo_empty[i]),
 			.phv_fifo_rd_en			(phv_fifo_rd_en[i]),
 			// output

@@ -12,6 +12,9 @@ module pkt_filter #(
 	input				clk,
 	input				aresetn,
 
+	input [31:0]							vlan_drop_flags,
+	output reg [31:0]						ctrl_token,
+
 	// input Slave AXI Stream
 	input [C_S_AXIS_DATA_WIDTH-1:0]			s_axis_tdata,
 	input [((C_S_AXIS_DATA_WIDTH/8))-1:0]	s_axis_tkeep,
@@ -36,6 +39,11 @@ module pkt_filter #(
 	output reg									ctrl_m_axis_tlast
 
 );
+
+(* mark_debug = "true" *) wire [31:0] dbg_vlan;
+(* mark_debug = "true" *) wire [31:0] dbg_ctrl;
+assign dbg_vlan = vlan_drop_flags;
+assign dbg_ctrl = ctrl_token;
 
 localparam WAIT_FIRST_PKT	= 0,
 		   WAIT_SECOND_PKT	= 1,
@@ -66,11 +74,10 @@ reg [3:0] state, state_next;
 
 // 1 for control, 0 for data;
 reg								c_switch, c_switch_next;
-
 //
-
-wire [15:0] udp_port;
-assign udp_port = s_axis_tdata[64+:16];
+reg [31:0]						ctrl_token_next;
+wire [11:0]						vlan_id_w;
+wire [31:0]						vlan_id_one_hot_w;
 
 
 // pkt fifo
@@ -82,6 +89,10 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]		tuser_fifo;
 wire [C_S_AXIS_DATA_WIDTH/8-1:0]	tkeep_fifo;
 wire								tlast_fifo;
 
+//
+assign vlan_id_w = tdata_fifo[116 +: 12];
+assign vlan_id_one_hot_w = (1'b1 << vlan_id_w[8:4]);
+
 fallthrough_small_fifo #(
 	.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
 	.MAX_DEPTH_BITS(4)
@@ -89,7 +100,7 @@ fallthrough_small_fifo #(
 pkt_fifo
 (
 	.din									({s_axis_tdata, s_axis_tuser, s_axis_tkeep, s_axis_tlast}),
-	.wr_en									(s_axis_tvalid),
+	.wr_en									(s_axis_tvalid & ~pkt_fifo_nearly_full),
 	.rd_en									(pkt_fifo_rd_en),
 	.dout									({tdata_fifo, tuser_fifo, tkeep_fifo, tlast_fifo}),
 	.full									(),
@@ -101,7 +112,7 @@ pkt_fifo
 );
 
 
-assign s_axis_tready = ~pkt_fifo_nearly_full && m_axis_tready;
+assign s_axis_tready = ~pkt_fifo_nearly_full;
 
 always @(*) begin
 
@@ -120,6 +131,7 @@ always @(*) begin
 	r_1st_tvalid_next = r_1st_tvalid;
 
 	state_next = state;
+	ctrl_token_next = ctrl_token;
 
 	pkt_fifo_rd_en = 0;
 
@@ -127,7 +139,10 @@ always @(*) begin
 		WAIT_FIRST_PKT: begin
 			// 1st packet
 			if (!pkt_fifo_empty) begin
-				if ((tdata_fifo[143:128]==`ETH_TYPE_IPV4) && 
+				if (vlan_id_one_hot_w  & vlan_drop_flags) begin
+					state_next = DROP_PKT;
+				end
+				else if ((tdata_fifo[143:128]==`ETH_TYPE_IPV4) && 
 					(tdata_fifo[223:216]==`IPPROT_UDP)) begin
 					state_next = WAIT_SECOND_PKT;
 
@@ -171,6 +186,7 @@ always @(*) begin
 				end
 			end
 			else begin
+				ctrl_token_next = ctrl_token + 1;
 				r_tdata = r_1st_tdata;
 				r_tkeep = r_1st_tkeep;
 				r_tuser = r_1st_tuser;
@@ -242,11 +258,14 @@ always @(posedge clk or negedge aresetn) begin
 
 		//
 		c_switch <= 0;
+		//
+		ctrl_token <= 0;
 	end
 	else begin
 		state <= state_next;
 		c_switch <= c_switch_next;
 
+		ctrl_token <= ctrl_token_next;
 		if (!c_switch) begin
 			m_axis_tdata <= r_tdata;
 			m_axis_tkeep <= r_tkeep;

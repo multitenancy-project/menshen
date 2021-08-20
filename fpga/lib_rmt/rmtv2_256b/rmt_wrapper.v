@@ -1,4 +1,13 @@
 `timescale 1ns / 1ps
+`define  REG_VLAN_DROP_FLAGS_BITS				31:0
+`define  REG_VLAN_DROP_FLAGS_WIDTH				32
+`define  REG_VLAN_DROP_FLAGS_DEFAULT				32'h00000000
+`define  REG_VLAN_DROP_FLAGS_ADDR				32'h4
+
+`define  REG_CTRL_TOKEN_BITS				31:0
+`define  REG_CTRL_TOKEN_WIDTH				32
+`define  REG_CTRL_TOKEN_DEFAULT				32'h00000000
+`define  REG_CTRL_TOKEN_ADDR				32'h8
 
 module rmt_wrapper #(
 	// Slave AXI parameters
@@ -7,16 +16,15 @@ module rmt_wrapper #(
 	parameter C_S_AXIS_DATA_WIDTH = 256,
 	parameter C_S_AXIS_TUSER_WIDTH = 128,
 	parameter C_NUM_QUEUES = 4,
-	parameter C_VLANID_WIDTH = 12
+	parameter C_VLANID_WIDTH = 12,
+    parameter C_S_AXI_DATA_WIDTH    = 32,
+    parameter C_S_AXI_ADDR_WIDTH    = 32
 	// Master
 	// self-defined
 )
 (
 	input									clk,		// axis clk
 	input									aresetn,	
-
-	input [31:0]							vlan_drop_flags,
-	output reg [31:0]							ctrl_token,
 
 	// input Slave AXI Stream
 	input [C_S_AXIS_DATA_WIDTH-1:0]				s_axis_tdata,
@@ -32,8 +40,27 @@ module rmt_wrapper #(
 	output     [C_S_AXIS_TUSER_WIDTH-1:0]		m_axis_tuser,
 	output    									m_axis_tvalid,
 	input										m_axis_tready,
-	output  									m_axis_tlast
+	output  									m_axis_tlast,
 	
+    input                                     S_AXI_ACLK,
+    input                                     S_AXI_ARESETN,
+    input      [C_S_AXI_ADDR_WIDTH-1 : 0]     S_AXI_AWADDR,
+    input                                     S_AXI_AWVALID,
+    input      [C_S_AXI_DATA_WIDTH-1 : 0]     S_AXI_WDATA,
+    input      [C_S_AXI_DATA_WIDTH/8-1 : 0]   S_AXI_WSTRB,
+    input                                     S_AXI_WVALID,
+    input                                     S_AXI_BREADY,
+    input      [C_S_AXI_ADDR_WIDTH-1 : 0]     S_AXI_ARADDR,
+    input                                     S_AXI_ARVALID,
+    input                                     S_AXI_RREADY,
+    output                                    S_AXI_ARREADY,
+    output     [C_S_AXI_DATA_WIDTH-1 : 0]     S_AXI_RDATA,
+    output     [1 : 0]                        S_AXI_RRESP,
+    output                                    S_AXI_RVALID,
+    output                                    S_AXI_WREADY,
+    output     [1 :0]                         S_AXI_BRESP,
+    output                                    S_AXI_BVALID,
+    output                                    S_AXI_AWREADY
 );
 
 /*=================================================*/
@@ -157,16 +184,66 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_7;
 wire 										ctrl_s_axis_tvalid_7;
 wire 										ctrl_s_axis_tlast_7;
 
-wire [31:0]			ctrl_token_w;
 
-always @(posedge clk) begin
-	if (~aresetn) begin
-		ctrl_token <= 0;
+    // define registers
+	wire [`REG_VLAN_DROP_FLAGS_BITS] vlan_drop_flags_reg;
+	reg [`REG_CTRL_TOKEN_BITS] ctrl_token_reg;
+
+	reg [31:0] vlan_drop_flags;
+	wire [31:0] ctrl_token;
+
+	wire resetn_sync;
+//Registers section
+ rmt_cpu_regs
+ #(
+     .C_BASE_ADDRESS        (0),
+     .C_S_AXI_DATA_WIDTH    (C_S_AXI_DATA_WIDTH),
+     .C_S_AXI_ADDR_WIDTH    (C_S_AXI_ADDR_WIDTH)
+ ) rmt_cpu_regs_inst
+ (
+   // General ports
+    .clk                    (clk),
+    .resetn                 (aresetn),
+   // AXI Lite ports
+    .S_AXI_ACLK             (S_AXI_ACLK),
+    .S_AXI_ARESETN          (S_AXI_ARESETN),
+    .S_AXI_AWADDR           (S_AXI_AWADDR),
+    .S_AXI_AWVALID          (S_AXI_AWVALID),
+    .S_AXI_WDATA            (S_AXI_WDATA),
+    .S_AXI_WSTRB            (S_AXI_WSTRB),
+    .S_AXI_WVALID           (S_AXI_WVALID),
+    .S_AXI_BREADY           (S_AXI_BREADY),
+    .S_AXI_ARADDR           (S_AXI_ARADDR),
+    .S_AXI_ARVALID          (S_AXI_ARVALID),
+    .S_AXI_RREADY           (S_AXI_RREADY),
+    .S_AXI_ARREADY          (S_AXI_ARREADY),
+    .S_AXI_RDATA            (S_AXI_RDATA),
+    .S_AXI_RRESP            (S_AXI_RRESP),
+    .S_AXI_RVALID           (S_AXI_RVALID),
+    .S_AXI_WREADY           (S_AXI_WREADY),
+    .S_AXI_BRESP            (S_AXI_BRESP),
+    .S_AXI_BVALID           (S_AXI_BVALID),
+    .S_AXI_AWREADY          (S_AXI_AWREADY),
+
+   // Register ports
+   .vlan_drop_flags_reg          (vlan_drop_flags_reg),
+   .ctrl_token_reg          (ctrl_token_reg),
+   // Global Registers - user can select if to use
+   .cpu_resetn_soft(),//software reset, after cpu module
+   .resetn_soft    (),//software reset to cpu module (from central reset management)
+   .resetn_sync    (resetn_sync)//synchronized reset, use for better timing
+);
+//registers logic, current logic is just a placeholder for initial compil, required to be changed by the user
+always @(posedge clk)
+	if (~resetn_sync) begin
+		ctrl_token_reg <= #1 `REG_CTRL_TOKEN_DEFAULT;
+		vlan_drop_flags <= 0;
 	end
 	else begin
-		ctrl_token <= ctrl_token_w;
-	end
-end
+		vlan_drop_flags <= #1 vlan_drop_flags_reg;
+		ctrl_token_reg <= #1 ctrl_token;
+    end
+
 
 
 pkt_filter #(
@@ -177,8 +254,9 @@ pkt_filter #(
 	.clk(clk),
 	.aresetn(aresetn),
 
+	//
 	.vlan_drop_flags(vlan_drop_flags),
-	.ctrl_token(ctrl_token_w),
+	.ctrl_token(ctrl_token),
 
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),

@@ -24,7 +24,7 @@ module rmt_wrapper #(
 (
 	input										clk,		// axis clk
 	input										aresetn,	
-	input [15:0]								vlan_drop_flags,
+	input [31:0]								vlan_drop_flags,
 	output [31:0]								ctrl_token,
 
 	/*
@@ -153,22 +153,6 @@ wire										ctrl_s_axis_tvalid_1;
 wire										ctrl_s_axis_tready_1;
 wire										ctrl_s_axis_tlast_1;
 
-
-//set up a timer here
-reg [95:0] fake_timer;
-localparam FAKE_SEED = 96'hcecc666;
-
-always @(posedge clk or negedge aresetn) begin
-	if(~aresetn) begin
-		fake_timer <= FAKE_SEED + 1'b1;
-	end
-	else begin
-		fake_timer <= fake_timer + 1'b1;
-	end
-
-end
-
-
 pkt_filter #(
 	.C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
 	.C_S_AXIS_TUSER_WIDTH(C_S_AXIS_TUSER_WIDTH)
@@ -263,7 +247,7 @@ generate
 		sub_pkt_fifo
 		fallthrough_small_fifo #(
 			.WIDTH(C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH+C_S_AXIS_DATA_WIDTH/8+1),
-			.MAX_DEPTH_BITS(4)
+			.MAX_DEPTH_BITS(6)
 		)
 		pkt_fifo (
 			.clk			(clk),                  // input wire clk
@@ -304,6 +288,22 @@ assign phv_fifo_out[3] = {high_phv_out[3], low_phv_out[3]};
 generate 
 	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
 		sub_phv_fifo_1
+		fallthrough_small_fifo #(
+			.WIDTH(512),
+			.MAX_DEPTH_BITS(6)
+		)
+		phv_fifo_1 (
+			.clk			(clk),
+			.reset			(~aresetn),
+			.din			(last_stg_phv_out[i][511:0]),
+			.wr_en			(last_stg_phv_out_valid[i]),
+			.rd_en			(phv_fifo_rd_en[i]),
+			.dout			(low_phv_out[i]),
+			.full			(),
+			.nearly_full	(phv_fifo_nearly_full[i]),
+			.empty			(phv_fifo_empty[i])
+		);
+		/*
 		fifo_generator_512b 
 		phv_fifo_1 (
 		  .clk				(clk),                  // input wire clk
@@ -316,13 +316,29 @@ generate
 		  .empty			(phv_fifo_empty[i]),              // output wire empty
 		  .wr_rst_busy		(),  // output wire wr_rst_busy
 		  .rd_rst_busy		()  // output wire rd_rst_busy
-		);
+		);*/
 	end
 endgenerate
 
 generate
 	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
 		sub_phv_fifo_2
+		fallthrough_small_fifo #(
+			.WIDTH(512),
+			.MAX_DEPTH_BITS(6)
+		)
+		phv_fifo_2 (
+			.clk			(clk),
+			.reset			(~aresetn),
+			.din			(last_stg_phv_out[i][1023:512]),
+			.wr_en			(last_stg_phv_out_valid[i]),
+			.rd_en			(phv_fifo_rd_en[i]),
+			.dout			(high_phv_out[i]),
+			.full			(),
+			.nearly_full	(),
+			.empty			()
+		);
+		/*
 		fifo_generator_512b 
 		phv_fifo_2 (
 		  .clk				(clk),                  // input wire clk
@@ -335,7 +351,7 @@ generate
 		  .empty			(),              // output wire empty
 		  .wr_rst_busy		(),  // output wire wr_rst_busy
 		  .rd_rst_busy		()  // output wire rd_rst_busy
-		);
+		);*/
 	end
 endgenerate
 
@@ -629,6 +645,13 @@ stage4
 	.vlan_ready_out			(last_stg_vlan_ready),
 	// back-pressure signals
 	.stage_ready_out		(last_stg_ready),
+    // .phv_in					(stg0_phv_in_d1),
+    // .phv_in_valid			(stg0_phv_in_valid_d1),
+	// .vlan_in				(stg0_vlan_in_r),
+	// .vlan_valid_in			(stg0_vlan_valid_in_r),
+	// .vlan_ready_out			(stg0_vlan_ready),
+	// // back-pressure signals
+	// .stage_ready_out		(stg0_ready),
 	// output
     .phv_out_0				(last_stg_phv_out[0]),
     .phv_out_valid_0		(last_stg_phv_out_valid[0]),
@@ -854,5 +877,88 @@ always @(posedge clk) begin
 	end
 end
 
+// dummy
+/*
+input_arbiter_ip 
+input_arbiter_v1_0 (
+	.axis_aclk(), 
+	.axis_resetn(), 
+	.m_axis_tdata (), 
+	.m_axis_tkeep (), 
+	.m_axis_tuser (), 
+	.m_axis_tvalid(), 
+	.m_axis_tready(), 
+	.m_axis_tlast (), 
+	.s_axis_0_tdata (), 
+	.s_axis_0_tkeep (), 
+	.s_axis_0_tuser (), 
+	.s_axis_0_tvalid(), 
+	.s_axis_0_tready(), 
+	.s_axis_0_tlast (), 
+	.s_axis_1_tdata (), 
+	.s_axis_1_tkeep (), 
+	.s_axis_1_tuser (), 
+	.s_axis_1_tvalid(), 
+	.s_axis_1_tready(), 
+	.s_axis_1_tlast (), 
+	.s_axis_2_tdata (), 
+	.s_axis_2_tkeep (), 
+	.s_axis_2_tuser (), 
+	.s_axis_2_tvalid(), 
+	.s_axis_2_tready(), 
+	.s_axis_2_tlast (), 
+	.s_axis_3_tdata (), 
+	.s_axis_3_tkeep (), 
+	.s_axis_3_tuser (), 
+	.s_axis_3_tvalid(), 
+	.s_axis_3_tready(), 
+	.s_axis_3_tlast (), 
+	.s_axis_4_tdata (), 
+	.s_axis_4_tkeep (), 
+	.s_axis_4_tuser (), 
+	.s_axis_4_tvalid(), 
+	.s_axis_4_tready(), 
+	.s_axis_4_tlast (), 
+	.S_AXI_AWADDR(), 
+	.S_AXI_AWVALID(),
+	.S_AXI_WDATA(),  
+	.S_AXI_WSTRB(),  
+	.S_AXI_WVALID(), 
+	.S_AXI_BREADY(), 
+	.S_AXI_ARADDR(), 
+	.S_AXI_ARVALID(),
+	.S_AXI_RREADY(), 
+	.S_AXI_ARREADY(),
+	.S_AXI_RDATA(),  
+	.S_AXI_RRESP(),  
+	.S_AXI_RVALID(), 
+	.S_AXI_WREADY(), 
+	.S_AXI_BRESP(),  
+	.S_AXI_BVALID(), 
+	.S_AXI_AWREADY(),
+	.S_AXI_ACLK (), 
+	.S_AXI_ARESETN(),
+	.pkt_fwd() 
+	); */
+
+// dbg
+//
+// (* mark_debug = "true" *) wire [3:0] dbg_pkt_fifo_full;
+// 
+// 
+// assign dbg_pkt_fifo_full[0] = pkt_fifo_nearly_full[0];
+// assign dbg_pkt_fifo_full[1] = pkt_fifo_nearly_full[1];
+// assign dbg_pkt_fifo_full[2] = pkt_fifo_nearly_full[2];
+// assign dbg_pkt_fifo_full[3] = pkt_fifo_nearly_full[3];
+
+/*
+ila_0
+dbg_ila (
+	.clk		(clk),
+	.probe0		(dbg_pkt_fifo_full[0]),
+	.probe1		(dbg_pkt_fifo_full[1]),
+	.probe2		(dbg_pkt_fifo_full[2]),
+	.probe3		(dbg_pkt_fifo_full[3])
+);*/
 
 endmodule

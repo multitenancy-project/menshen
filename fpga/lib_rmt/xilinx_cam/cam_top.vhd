@@ -88,7 +88,7 @@ ENTITY cam_top IS
     C_MATCH_RESOLUTION_TYPE    :  INTEGER        := 0; --lowest match
     C_MEM_INIT                 :  INTEGER        := 1; --use a mif file
     C_MEM_INIT_FILE            :  STRING         :="";
-    C_MEM_TYPE                 :  INTEGER        := 0; --0 use SRL16, 1 use BRAM
+    C_MEM_TYPE                 :  INTEGER        := 1; --0 use SRL16, 1 use BRAM
     C_REG_OUTPUTS              :  INTEGER        := 0; --use registered output (for BRAM)
     C_TERNARY_MODE             :  INTEGER        := 0; --use CAM
     C_WIDTH                    :  INTEGER        := 160

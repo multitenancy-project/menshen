@@ -126,7 +126,7 @@ assign m_axis_tdata = fifo_out_tdata[cur_queue];
 assign m_axis_tuser = fifo_out_tuser[cur_queue];
 assign m_axis_tkeep = fifo_out_tkeep[cur_queue];
 assign m_axis_tlast = fifo_out_tlast[cur_queue];
-assign m_axis_tvalid = ~empty[cur_queue];
+assign m_axis_tvalid = ~empty[cur_queue] && m_axis_tready;
 
 localparam	IDLE=0,
 			WR_PKT=1;

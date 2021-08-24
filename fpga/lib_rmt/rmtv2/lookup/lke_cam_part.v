@@ -69,7 +69,7 @@ localparam IDLE_S = 3'd0,
 		   EMPTY1_S = 3'd5,
 		   OUTPUT_S = 3'd6;
 
-assign ready_out = lookup_state != HALT_S;
+assign ready_out = lookup_state!=HALT_S;
 
 always @(posedge clk or negedge rst_n) begin
 
@@ -88,15 +88,14 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case(lookup_state)
             IDLE_S: begin
-				phv_out_valid <= 0;
-				if_match <= 0;
-
                 if (key_valid == 1'b1) begin
 					// ready_out <= 1'b0;
                     phv_reg <= phv_in;
                     lookup_state <= WAIT1_S;
                 end
                 else begin
+					phv_out_valid <= 0;
+					if_match <= 0;
 					// ready_out <= 1'b1;
                     lookup_state <= IDLE_S;
                 end

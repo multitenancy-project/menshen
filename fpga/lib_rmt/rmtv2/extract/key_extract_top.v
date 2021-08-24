@@ -68,6 +68,7 @@ always @(*) begin
 
 	key_offset_valid_next = 0;
 
+
 	case (bram_state) 
 		BRAM_IDLE: begin
 			if (vlan_in_valid) begin
@@ -78,13 +79,18 @@ always @(*) begin
 			bram_state_next = BRAM_IDLE;
 			key_offset_valid_next = 1;
 		end
+		BRAM_CYCLE_2: begin
+			bram_state_next = BRAM_CYCLE_3;
+		end
+		BRAM_CYCLE_3: begin
+			bram_state_next = BRAM_IDLE;
+		end
 	endcase
 end
 
 always @(posedge clk) begin
 	if (~rst_n) begin
 		bram_state <= BRAM_IDLE;
-
 		key_offset_valid <= 0;
 	end
 	else begin

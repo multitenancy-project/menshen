@@ -71,7 +71,7 @@ localparam IDLE_S = 3'd0,
 		   EMPTY1_S = 3'd5,
 		   OUTPUT_S = 3'd6;
 
-assign ready_out = lookup_state != HALT_S;
+assign ready_out = lookup_state!=HALT_S;
 
 always @(posedge clk or negedge rst_n) begin
 
@@ -91,9 +91,6 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case(lookup_state)
             IDLE_S: begin
-                action_valid <= 1'b0;
-				act_vlan_out_valid <= 0;
-				if_match_d1 <= 0;
                 if (phv_valid == 1'b1) begin
 					// ready_out <= 1'b0;
                     phv_reg <= phv_in;
@@ -109,6 +106,9 @@ always @(posedge clk or negedge rst_n) begin
                 else begin
 					// ready_out <= 1'b1;
                     lookup_state <= IDLE_S;
+					action_valid <= 1'b0;
+					act_vlan_out_valid <= 0;
+					if_match_d1 <= 0;
                 end
             end
 

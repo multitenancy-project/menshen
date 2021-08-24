@@ -189,14 +189,14 @@ end
 
 wire [C_VLANID_WIDTH-1:0]				parser_out_vlan, vlan_fifo_out;
 wire									parser_out_vlan_valid;
-wire	vlan_fifo_empty, vlan_fifo_nearly_full;
+// wire	vlan_fifo_empty, vlan_fifo_nearly_full;
 reg [C_VLANID_WIDTH-1:0] out_vlan_next;
 reg out_vlan_valid_next;
-reg		vlan_fifo_rd_en;
+// reg		vlan_fifo_rd_en;
 
-wire [PKT_HDR_LEN-1:0]		phv_fifo_out;
-wire	phv_fifo_empty, phv_fifo_nearly_full;
-reg		phv_fifo_rd_en;
+// wire [PKT_HDR_LEN-1:0]		phv_fifo_out;
+// wire	phv_fifo_empty, phv_fifo_nearly_full;
+// reg		phv_fifo_rd_en;
 
 
 
@@ -240,25 +240,24 @@ end*/
 
 always @(*) begin
 	p_cur_queue_next = p_cur_queue;
-	pkt_hdr_vec_next = phv_fifo_out;
-	out_vlan_next = vlan_fifo_out;
+	pkt_hdr_vec_next = pkt_hdr_vec_r;
 	parser_valid_next = 0;
-	out_vlan_valid_next = 0;
 
-	phv_fifo_rd_en = 0;
-	vlan_fifo_rd_en = 0;
-	if (!phv_fifo_empty) begin
-		pkt_hdr_vec_next = {phv_fifo_out[PKT_HDR_LEN-1:145], p_cur_queue_val, phv_fifo_out[0+:141]};
+	if (parser_valid_w) begin
+		pkt_hdr_vec_next = {pkt_hdr_vec_w[PKT_HDR_LEN-1:145], p_cur_queue_val, pkt_hdr_vec_w[0+:141]};
 		parser_valid_next = 1;
-		phv_fifo_rd_en = 1;
 
 		p_cur_queue_next = p_cur_queue_plus1;
 	end
+end
 
-	if (!vlan_fifo_empty) begin
-		out_vlan_next = vlan_fifo_out;
-		vlan_fifo_rd_en = 1;
+always @(*) begin
+	out_vlan_valid_next = 0;
+	out_vlan_next = out_vlan;
+
+	if (parser_out_vlan_valid) begin
 		out_vlan_valid_next = 1;
+		out_vlan_next = parser_out_vlan;
 	end
 end
 
@@ -335,8 +334,8 @@ do_parsing
 	.bram_in				(bram_out_0_d1),
 	.bram_in_valid			(out_bram_valid_d1),
 
-	.stg_ready				(stg_ready_in & ~phv_fifo_nearly_full),
-	.stg_vlan_ready			(out_vlan_ready & ~vlan_fifo_nearly_full),
+	.stg_ready				(stg_ready_in),
+	.stg_vlan_ready			(out_vlan_ready),
 
 	// output
 	.pkt_hdr_vec			(pkt_hdr_vec_w),
@@ -364,7 +363,9 @@ always @(*) begin
 		BRAM_IDLE: begin
 			if (s_vlan_id_valid) begin
 				bram_state_next = BRAM_CYCLE_1;
-				bram_ready_next = 0;
+				if (s_axis_tvalid && s_axis_tlast) begin
+					bram_ready_next = 0;
+				end
 			end
 		end
 		BRAM_CYCLE_1: begin
@@ -394,6 +395,7 @@ always @(posedge axis_clk) begin
 end
 
 // fifo
+/*
 fallthrough_small_fifo #(
 	.WIDTH(PKT_HDR_LEN),
 	.MAX_DEPTH_BITS(4)
@@ -412,7 +414,7 @@ pkt_hdr_fifo (
 );
 
 fallthrough_small_fifo #(
-	.WIDTH(PKT_HDR_LEN),
+	.WIDTH(C_VLANID_WIDTH),
 	.MAX_DEPTH_BITS(4)
 )
 vlan_fifo (
@@ -427,6 +429,7 @@ vlan_fifo (
 	.reset				(~aresetn),
 	.clk				(axis_clk)
 );
+);*/
 
 /*================Control Path====================*/
 wire [7:0]          mod_id; //module ID

@@ -211,7 +211,7 @@ action_engine #(
     //signals output from ALUs
     .phv_out(phv_out),
     .phv_valid_out(phv_out_valid_from_ae),
-    .ready_in(phv_fifo_ready_0||phv_fifo_ready_1||phv_fifo_ready_2||phv_fifo_ready_3),
+    .ready_in(phv_fifo_ready_0&&phv_fifo_ready_1&&phv_fifo_ready_2&&phv_fifo_ready_3),
 	.act_vlan_in			(act_vlan_out_r),
 	.act_vlan_valid_in		(act_vlan_out_valid_r),
 	.act_vlan_ready			(act_vlan_ready),

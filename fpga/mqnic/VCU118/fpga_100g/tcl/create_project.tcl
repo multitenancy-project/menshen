@@ -85,6 +85,13 @@ lappend SYN_FILES lib_rmt/rmtv2/lookup/lookup_engine_top.v
 lappend SYN_FILES lib_rmt/rmtv2/lookup/lke_cam_part.v
 lappend SYN_FILES lib_rmt/rmtv2/lookup/lke_ram_part.v
 
+# netfpga lib files
+lappend SYN_FILES ip/rmt/fallthrough_small_fifo_v1_0_0/hdl/fallthrough_small_fifo.v
+lappend SYN_FILES ip/rmt/fallthrough_small_fifo_v1_0_0/hdl/small_fifo.v
+lappend SYN_FILES ip/rmt/input_arbiter_v1_0_0/hdl/input_arbiter.v
+lappend SYN_FILES ip/rmt/input_arbiter_v1_0_0/hdl/input_arbiter_cpu_regs.v
+lappend SYN_FILES ip/rmt/input_arbiter_v1_0_0/hdl/input_arbiter_cpu_regs_defines.v
+
 # XDC files
 set XDC_FILES [list fpga.xdc]
 lappend XDC_FILES boot.xdc
@@ -107,7 +114,7 @@ lappend IP_TCL_FILES ip/rmt/fifo_generator_512b.tcl
 lappend IP_TCL_FILES ip/rmt/fifo_generator_705b.tcl
 lappend IP_TCL_FILES ip/rmt/parse_act_ram_ip.tcl
 lappend IP_TCL_FILES ip/rmt/page_tbl_16w_32d.tcl
-lappend IP_TCL_FILES ip/rmt/fifo.tcl
+#lappend IP_TCL_FILES ip/rmt/fifo.tcl
 
 
 #############################

@@ -234,7 +234,7 @@ parameter BOARD_VER = {16'd0, 16'd1};
 parameter FPGA_ID = 32'h4B57093;
 
 // Structural parameters
-parameter IF_COUNT = 2;
+parameter IF_COUNT = 1;
 parameter PORTS_PER_IF = 1;
 
 parameter PORT_COUNT = IF_COUNT*PORTS_PER_IF;

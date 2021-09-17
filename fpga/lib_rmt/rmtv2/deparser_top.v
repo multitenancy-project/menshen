@@ -70,7 +70,7 @@ reg									snd_half_fifo_valid_in_r;
 
 fallthrough_small_fifo #(
 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
-	.MAX_DEPTH_BITS(C_FIFO_BITS_WIDTH)
+	.MAX_DEPTH_BITS(4)
 )
 fst_half_fifo (
 	.din				({fst_half_fifo_tdata_in_r, fst_half_fifo_tuser_in_r, fst_half_fifo_tkeep_in_r, fst_half_fifo_tlast_in_r}),
@@ -91,7 +91,7 @@ fst_half_fifo (
 
 fallthrough_small_fifo #(
 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
-	.MAX_DEPTH_BITS(C_FIFO_BITS_WIDTH)
+	.MAX_DEPTH_BITS(4)
 )
 snd_half_fifo (
 	.din				({snd_half_fifo_tdata_in_r, snd_half_fifo_tuser_in_r, snd_half_fifo_tkeep_in_r, snd_half_fifo_tlast_in_r}),
@@ -121,7 +121,7 @@ wire vlan_fifo_empty;
 // vlan fifo
 fallthrough_small_fifo #(
 	.WIDTH(C_VLANID_WIDTH),
-	.MAX_DEPTH_BITS(C_FIFO_BITS_WIDTH)
+	.MAX_DEPTH_BITS(5)
 )
 vlan_fifo (
 	.din					(vlan_fifo_in),
@@ -155,7 +155,7 @@ reg								seg_fifo_valid_in_r;
 // seg fifo
 fallthrough_small_fifo #(
 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
-	.MAX_DEPTH_BITS(C_FIFO_BITS_WIDTH)
+	.MAX_DEPTH_BITS(5)
 )
 seg_fifo (
 	.din					({seg_fifo_tdata_in_r, seg_fifo_tuser_in_r, seg_fifo_tkeep_in_r, seg_fifo_tlast_in_r}),

@@ -64,6 +64,12 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_1;
 wire 										c_s_axis_tvalid_1;
 wire 										c_s_axis_tlast_1;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_1_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			c_s_axis_tkeep_1_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_1_r;
+reg 										c_s_axis_tvalid_1_r;
+reg 										c_s_axis_tlast_1_r;
+
 //control path 2 (lkup2action)
 wire [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_2;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		c_s_axis_tkeep_2;
@@ -71,6 +77,11 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_2;
 wire 										c_s_axis_tvalid_2;
 wire 										c_s_axis_tlast_2;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_2_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			c_s_axis_tkeep_2_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_2_r;
+reg 										c_s_axis_tvalid_2_r;
+reg 										c_s_axis_tlast_2_r;
 // vlan fifo
 
 
@@ -104,6 +115,18 @@ always @(posedge axis_clk) begin
 		//
 		act_vlan_out_r <= 0;
 		act_vlan_out_valid_r <= 0;
+		//
+		c_s_axis_tdata_1_r <= 0;
+		c_s_axis_tkeep_1_r <= 0;
+		c_s_axis_tuser_1_r <= 0;
+		c_s_axis_tvalid_1_r <= 0;
+		c_s_axis_tlast_1_r <= 0;
+
+		c_s_axis_tdata_2_r <= 0;
+		c_s_axis_tkeep_2_r <= 0;
+		c_s_axis_tuser_2_r <= 0;
+		c_s_axis_tvalid_2_r <= 0;
+		c_s_axis_tlast_2_r <= 0;
 	end
 	else begin
 		key2lookup_key_r <= key2lookup_key;
@@ -117,6 +140,18 @@ always @(posedge axis_clk) begin
 		//
 		act_vlan_out_r <= act_vlan_out;
 		act_vlan_out_valid_r <= act_vlan_out_valid;
+		//
+		c_s_axis_tdata_1_r <= c_s_axis_tdata_1;
+		c_s_axis_tkeep_1_r <= c_s_axis_tkeep_1;
+		c_s_axis_tuser_1_r <= c_s_axis_tuser_1;
+		c_s_axis_tvalid_1_r <= c_s_axis_tvalid_1;
+		c_s_axis_tlast_1_r <= c_s_axis_tlast_1;
+
+		c_s_axis_tdata_2_r <= c_s_axis_tdata_2;
+		c_s_axis_tkeep_2_r <= c_s_axis_tkeep_2;
+		c_s_axis_tuser_2_r <= c_s_axis_tuser_2;
+		c_s_axis_tvalid_2_r <= c_s_axis_tvalid_2;
+		c_s_axis_tlast_2_r <= c_s_axis_tlast_2;
 	end
 end
 
@@ -199,11 +234,11 @@ lookup_engine_top #(
 	.act_vlan_ready				(action2lookup_ready),
 
     //control path
-    .c_s_axis_tdata(c_s_axis_tdata_1),
-	.c_s_axis_tuser(c_s_axis_tuser_1),
-	.c_s_axis_tkeep(c_s_axis_tkeep_1),
-	.c_s_axis_tvalid(c_s_axis_tvalid_1),
-	.c_s_axis_tlast(c_s_axis_tlast_1),
+    .c_s_axis_tdata(c_s_axis_tdata_1_r),
+	.c_s_axis_tuser(c_s_axis_tuser_1_r),
+	.c_s_axis_tkeep(c_s_axis_tkeep_1_r),
+	.c_s_axis_tvalid(c_s_axis_tvalid_1_r),
+	.c_s_axis_tlast(c_s_axis_tlast_1_r),
 
     .c_m_axis_tdata(c_s_axis_tdata_2),
 	.c_m_axis_tuser(c_s_axis_tuser_2),
@@ -241,11 +276,11 @@ action_engine #(
 	.vlan_out_valid(vlan_valid_out),
 	.vlan_out_ready(vlan_out_ready),
     //control path
-    .c_s_axis_tdata(c_s_axis_tdata_2),
-	.c_s_axis_tuser(c_s_axis_tuser_2),
-	.c_s_axis_tkeep(c_s_axis_tkeep_2),
-	.c_s_axis_tvalid(c_s_axis_tvalid_2),
-	.c_s_axis_tlast(c_s_axis_tlast_2),
+    .c_s_axis_tdata(c_s_axis_tdata_2_r),
+	.c_s_axis_tuser(c_s_axis_tuser_2_r),
+	.c_s_axis_tkeep(c_s_axis_tkeep_2_r),
+	.c_s_axis_tvalid(c_s_axis_tvalid_2_r),
+	.c_s_axis_tlast(c_s_axis_tlast_2_r),
 
     .c_m_axis_tdata(c_m_axis_tdata),
 	.c_m_axis_tuser(c_m_axis_tuser),

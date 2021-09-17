@@ -96,7 +96,11 @@ reg								out_bram_valid, out_bram_valid_d1;
 reg bram_ready, bram_ready_next;
 
 
-assign s_axis_tready = bram_ready;
+assign s_axis_tready = bram_ready
+						&& m_axis_tready_0
+						&& m_axis_tready_1
+						&& m_axis_tready_2
+						&& m_axis_tready_3;
 //
 
 wire [3:0] m_axis_tready_queue;

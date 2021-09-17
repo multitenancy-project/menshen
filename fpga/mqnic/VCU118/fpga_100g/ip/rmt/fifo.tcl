@@ -10,3 +10,9 @@ reset_target all [get_ips input_arbiter_ip]
 generate_target all [get_ips input_arbiter_ip]
 
 update_ip_catalog
+
+create_ip -name ila -vendor xilinx.com -library ip -version 6.2 -module_name ila_0
+set_property -dict [list CONFIG.C_NUM_OF_PROBES {4} CONFIG.C_EN_STRG_QUAL {1} CONFIG.C_ADV_TRIGGER {true} CONFIG.C_PROBE3_MU_CNT {2} CONFIG.C_PROBE2_MU_CNT {2} CONFIG.C_PROBE1_MU_CNT {2} CONFIG.C_PROBE0_MU_CNT {2} CONFIG.ALL_PROBE_SAME_MU_CNT {2}] [get_ips ila_0]
+reset_target all [get_ips ila_0]
+generate_target all [get_ips ila_0]
+update_ip_catalog

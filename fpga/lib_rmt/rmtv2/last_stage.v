@@ -25,20 +25,20 @@ module last_stage #(
 	input									vlan_valid_in,
 
 	//
-    output [PHV_LEN-1:0]         phv_out_0,
-    output                       phv_out_valid_0,
+    output reg [PHV_LEN-1:0]         phv_out_0,
+    output reg                       phv_out_valid_0,
 	input                        phv_fifo_ready_0,
 
-    output [PHV_LEN-1:0]         phv_out_1,
-    output                       phv_out_valid_1,
+    output reg [PHV_LEN-1:0]         phv_out_1,
+    output reg                       phv_out_valid_1,
 	input                        phv_fifo_ready_1,
 
-    output [PHV_LEN-1:0]         phv_out_2,
-    output                       phv_out_valid_2,
+    output reg [PHV_LEN-1:0]         phv_out_2,
+    output reg                       phv_out_valid_2,
 	input                        phv_fifo_ready_2,
 
-    output [PHV_LEN-1:0]         phv_out_3,
-    output                       phv_out_valid_3,
+    output reg [PHV_LEN-1:0]         phv_out_3,
+    output reg                       phv_out_valid_3,
 	input                        phv_fifo_ready_3,
 
 
@@ -237,16 +237,64 @@ action_engine #(
 // position: [141+:4]
 //
 
-assign phv_out_0 = phv_out;
-assign phv_out_1 = phv_out;
-assign phv_out_2 = phv_out;
-assign phv_out_3 = phv_out;
+reg [PHV_LEN-1:0] phv_out_0_next;
+reg [PHV_LEN-1:0] phv_out_1_next;
+reg [PHV_LEN-1:0] phv_out_2_next;
+reg [PHV_LEN-1:0] phv_out_3_next;
+reg phv_out_valid_0_next;
+reg phv_out_valid_1_next;
+reg phv_out_valid_2_next;
+reg phv_out_valid_3_next;
 
+always @(*) begin
+	phv_out_valid_0_next = 0;
+	phv_out_valid_1_next = 0;
+	phv_out_valid_2_next = 0;
+	phv_out_valid_3_next = 0;
 
-assign phv_out_valid_0 = (phv_out[141]==1?1:0) & phv_out_valid_from_ae;
-assign phv_out_valid_1 = (phv_out[142]==1?1:0) & phv_out_valid_from_ae;
-assign phv_out_valid_2 = (phv_out[143]==1?1:0) & phv_out_valid_from_ae;
-assign phv_out_valid_3 = (phv_out[144]==1?1:0) & phv_out_valid_from_ae;
+	phv_out_0_next = phv_out;
+	phv_out_1_next = phv_out;
+	phv_out_2_next = phv_out;
+	phv_out_3_next = phv_out;
+
+	if (phv_out_valid_from_ae) begin
+		if (phv_out[141]) begin
+			phv_out_valid_0_next = 1;
+		end
+		if (phv_out[142]) begin
+			phv_out_valid_1_next = 1;
+		end
+		if (phv_out[143]) begin
+			phv_out_valid_2_next = 1;
+		end
+		if (phv_out[144]) begin
+			phv_out_valid_3_next = 1;
+		end
+	end
+end
+
+always @(posedge axis_clk) begin
+	if (~aresetn) begin
+		phv_out_0 <= 0;
+		phv_out_1 <= 0;
+		phv_out_2 <= 0;
+		phv_out_3 <= 0;
+		phv_out_valid_0 <= 0;
+		phv_out_valid_1 <= 0;
+		phv_out_valid_2 <= 0;
+		phv_out_valid_3 <= 0;
+	end
+	else begin
+		phv_out_0 <= phv_out_0_next;
+		phv_out_1 <= phv_out_1_next;
+		phv_out_2 <= phv_out_2_next;
+		phv_out_3 <= phv_out_3_next;
+		phv_out_valid_0 <= phv_out_valid_0_next;
+		phv_out_valid_1 <= phv_out_valid_1_next;
+		phv_out_valid_2 <= phv_out_valid_2_next;
+		phv_out_valid_3 <= phv_out_valid_3_next;
+	end
+end
 
 always @(posedge axis_clk) begin
 	if (~aresetn) begin

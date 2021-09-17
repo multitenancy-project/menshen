@@ -54,11 +54,11 @@ reg								pkt_fifo_rd_en;
 wire	pkt_fifo_empty, pkt_fifo_full;
 
 //
-assign s_axis_tready = !pkt_fifo_full;
+assign s_axis_tready = ~pkt_fifo_full;
 
 fallthrough_small_fifo #(
 	.WIDTH(C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH+C_S_AXIS_DATA_WIDTH/8+1),
-	.MAX_DEPTH_BITS(8)
+	.MAX_DEPTH_BITS(5)
 )
 seg_fifo (
 	.din					({s_axis_tdata, s_axis_tkeep, s_axis_tuser, s_axis_tlast}),

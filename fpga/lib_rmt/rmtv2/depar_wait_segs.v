@@ -49,8 +49,8 @@ module depar_wait_segs #(
 
 localparam	WAIT_FIRST_SEG=0,
 			WAIT_SECOND_SEG=1,
-			WAIT_THIRD_SEG=2,
-			WAIT_FOURTH_SEG=3,
+			EMPTY_1=2,
+			EMPTY_2=3,
 			FLUSH_SEG=4;
 
 reg [C_AXIS_DATA_WIDTH-1:0]					output_fifo_tdata_next;
@@ -108,13 +108,13 @@ always @(*) begin
 				fst_half_tlast_next = pkt_fifo_tlast;
 
 				vlan_next = pkt_fifo_tdata[116+:12];
-				vlan_valid_next = 1;
 
 				if (pkt_fifo_tlast) begin
 					if (fst_half_fifo_ready && snd_half_fifo_ready) begin
 						pkt_fifo_rd_en = 1;
 						fst_half_valid_next = 1;
 						snd_half_valid_next = 1;
+						vlan_valid_next = 1;
 						state_next = WAIT_FIRST_SEG;
 					end
 				end
@@ -122,6 +122,7 @@ always @(*) begin
 					if (fst_half_fifo_ready) begin
 						pkt_fifo_rd_en = 1;
 						fst_half_valid_next = 1;
+						vlan_valid_next = 1;
 						state_next = WAIT_SECOND_SEG;
 					end
 				end

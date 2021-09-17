@@ -2,7 +2,7 @@
 
 `define SUB_DEPARSE_1P(idx) \
 	if(parse_action[idx][0]) begin \
-		case(sub_depar_val_out_type[idx]) \
+		case(sub_depar_val_out_type_d1[idx]) \
 			2'b01: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
 			2'b10: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
 			2'b11: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
@@ -11,7 +11,7 @@
 
 `define SUB_DEPARSE_2P(idx) \
 	if(parse_action[idx][0]) begin \
-		case(sub_depar_val_out_type[idx]) \
+		case(sub_depar_val_out_type_d1[idx]) \
 			2'b01: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
 			2'b10: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
 			2'b11: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
@@ -19,12 +19,12 @@
 	end \
 
 `define SWAP_BYTE_ORDER(idx) \
-	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out[idx][0+:8], \
-												sub_depar_val_out[idx][8+:8], \
-												sub_depar_val_out[idx][16+:8], \
-												sub_depar_val_out[idx][24+:8], \
-												sub_depar_val_out[idx][32+:8], \
-												sub_depar_val_out[idx][40+:8]}; \
+	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out_d1[idx][0+:8], \
+												sub_depar_val_out_d1[idx][8+:8], \
+												sub_depar_val_out_d1[idx][16+:8], \
+												sub_depar_val_out_d1[idx][24+:8], \
+												sub_depar_val_out_d1[idx][32+:8], \
+												sub_depar_val_out_d1[idx][40+:8]}; \
 
 module depar_do_deparsing #(
 	parameter	C_AXIS_DATA_WIDTH = 512,
@@ -86,6 +86,12 @@ module depar_do_deparsing #(
 
 integer i;
 
+reg [C_AXIS_DATA_WIDTH-1:0]						depar_out_tdata_next;
+reg [C_AXIS_DATA_WIDTH/8-1:0]					depar_out_tkeep_next;
+reg [C_AXIS_TUSER_WIDTH-1:0]					depar_out_tuser_next;
+reg												depar_out_tlast_next;
+reg												depar_out_tvalid_next;
+
 wire [159:0] bram_out;
 wire [6:0] parse_action_ind [0:9];
 wire [9:0] parse_action_ind_10b [0:9];
@@ -132,11 +138,12 @@ wire [47:0]					sub_depar_val_out_swapped [0:9];
 wire [47:0]					sub_depar_val_out [0:9];
 wire [1:0]					sub_depar_val_out_type [0:9];
 wire [9:0]					sub_depar_val_out_valid;
-// reg [47:0]					sub_depar_val_out_d1 [0:9];
-// reg [1:0]					sub_depar_val_out_type_d1 [0:9];
-// reg [9:0]					sub_depar_val_out_valid_d1;
 
-/*
+
+reg [47:0]					sub_depar_val_out_d1 [0:9];
+reg [1:0]					sub_depar_val_out_type_d1 [0:9];
+reg [9:0]					sub_depar_val_out_valid_d1;
+
 always @(posedge clk) begin
 	if (~aresetn) begin
 		for (i=0; i<10; i=i+1) begin
@@ -153,7 +160,6 @@ always @(posedge clk) begin
 		sub_depar_val_out_valid_d1 <= sub_depar_val_out_valid;
 	end
 end
-*/
 
 `SWAP_BYTE_ORDER(0)
 `SWAP_BYTE_ORDER(1)
@@ -205,11 +211,11 @@ always @(*) begin
 	snd_half_fifo_rd_en = 0;
 	pkt_fifo_rd_en = 0;
 	// output
-	depar_out_tdata = 0;
-	depar_out_tuser = 0;
-	depar_out_tkeep = 0;
-	depar_out_tlast = 0;
-	depar_out_tvalid = 0;
+	depar_out_tdata_next = depar_out_tdata;
+	depar_out_tuser_next = depar_out_tuser;
+	depar_out_tkeep_next = depar_out_tkeep;
+	depar_out_tlast_next = depar_out_tlast;
+	depar_out_tvalid_next = 0;
 
 	sub_depar_act_valid = 10'b0;
 
@@ -246,7 +252,7 @@ always @(*) begin
 				else begin
 					sub_depar_act_valid = 10'b1111111111;
 
-					state_next = FINISH_SUB_DEPARSER_0;
+					state_next = EMPTY_2;
 					pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
 					pkts_tuser_stored_1p_next = phv_fifo_out[0+:128];
 					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
@@ -294,13 +300,13 @@ always @(*) begin
 			fst_half_fifo_rd_en = 1;
 			snd_half_fifo_rd_en = 1;
 
-			depar_out_tdata = pkts_tdata_stored_1p;
-			depar_out_tuser = pkts_tuser_stored_1p;
-			depar_out_tkeep = pkts_tkeep_stored_1p;
-			depar_out_tlast = pkts_tlast_stored_1p;
+			depar_out_tdata_next = pkts_tdata_stored_1p;
+			depar_out_tuser_next = pkts_tuser_stored_1p;
+			depar_out_tkeep_next = pkts_tkeep_stored_1p;
+			depar_out_tlast_next = pkts_tlast_stored_1p;
 
 			if (depar_out_tready) begin
-				depar_out_tvalid = 1;
+				depar_out_tvalid_next = 1;
 				if (pkts_tlast_stored_1p) begin
 					state_next = IDLE;
 				end
@@ -310,13 +316,13 @@ always @(*) begin
 			end
 		end
 		FLUSH_PKT_1: begin
-			depar_out_tdata = pkts_tdata_stored_2p;
-			depar_out_tuser = pkts_tuser_stored_2p;
-			depar_out_tkeep = pkts_tkeep_stored_2p;
-			depar_out_tlast = pkts_tlast_stored_2p;
+			depar_out_tdata_next = pkts_tdata_stored_2p;
+			depar_out_tuser_next = pkts_tuser_stored_2p;
+			depar_out_tkeep_next = pkts_tkeep_stored_2p;
+			depar_out_tlast_next = pkts_tlast_stored_2p;
 
 			if (depar_out_tready) begin
-				depar_out_tvalid = 1;
+				depar_out_tvalid_next = 1;
 				if (pkts_tlast_stored_2p) begin
 					state_next = IDLE;
 				end
@@ -327,13 +333,13 @@ always @(*) begin
 		end
 		FLUSH_PKT: begin
 			if (!pkt_fifo_empty) begin
-				depar_out_tdata = pkt_fifo_tdata;
-				depar_out_tuser =  pkt_fifo_tuser;
-				depar_out_tkeep =  pkt_fifo_tkeep;
-				depar_out_tlast =  pkt_fifo_tlast;
+				depar_out_tdata_next = pkt_fifo_tdata;
+				depar_out_tuser_next =  pkt_fifo_tuser;
+				depar_out_tkeep_next =  pkt_fifo_tkeep;
+				depar_out_tlast_next =  pkt_fifo_tlast;
 				if (depar_out_tready) begin
 					pkt_fifo_rd_en = 1;
-					depar_out_tvalid = 1;
+					depar_out_tvalid_next = 1;
 					if (pkt_fifo_tlast) begin
 						state_next = IDLE;
 					end
@@ -379,6 +385,12 @@ always @(posedge clk) begin
 		pkts_tuser_stored_2p <= 0;
 		pkts_tkeep_stored_2p <= 0;
 		pkts_tlast_stored_2p <= 0;
+		//
+		depar_out_tdata <= 0;
+		depar_out_tkeep <= 0;
+		depar_out_tuser <= 0;
+		depar_out_tlast <= 0;
+		depar_out_tvalid <= 0;
 	end
 	else begin
 		state <= state_next;
@@ -392,6 +404,12 @@ always @(posedge clk) begin
 		pkts_tuser_stored_2p <= pkts_tuser_stored_2p_next;
 		pkts_tkeep_stored_2p <= pkts_tkeep_stored_2p_next;
 		pkts_tlast_stored_2p <= pkts_tlast_stored_2p_next;
+		//
+		depar_out_tdata <= depar_out_tdata_next;
+		depar_out_tkeep <= depar_out_tkeep_next;
+		depar_out_tuser <= depar_out_tuser_next;
+		depar_out_tlast <= depar_out_tlast_next;
+		depar_out_tvalid <= depar_out_tvalid_next;
 	end
 end
 

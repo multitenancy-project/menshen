@@ -105,7 +105,7 @@ wire vlan_fifo_empty;
 // vlan fifo
 fallthrough_small_fifo #(
 	.WIDTH(C_VLANID_WIDTH),
-	.MAX_DEPTH_BITS(4)
+	.MAX_DEPTH_BITS(5)
 )
 vlan_fifo (
 	.din					(vlan_fifo_in),
@@ -134,7 +134,7 @@ wire seg_fifo_empty;
 // seg fifo
 fallthrough_small_fifo #(
 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
-	.MAX_DEPTH_BITS(4)
+	.MAX_DEPTH_BITS(5)
 )
 seg_fifo (
 	.din					({seg_fifo_tdata_in, seg_fifo_tuser_in, seg_fifo_tkeep_in, seg_fifo_tlast_in}),

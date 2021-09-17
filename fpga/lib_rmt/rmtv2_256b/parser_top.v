@@ -98,25 +98,25 @@ assign m_axis_tdata_0 = s_axis_tdata;
 assign m_axis_tuser_0 = s_axis_tuser;
 assign m_axis_tkeep_0 = s_axis_tkeep;
 assign m_axis_tlast_0 = s_axis_tlast;
-assign m_axis_tvalid_0 = (cur_queue==0?1:0) & s_axis_tvalid;
+assign m_axis_tvalid_0 = (cur_queue==0?1:0) & s_axis_tvalid & m_axis_tready_0;
 
 assign m_axis_tdata_1 = s_axis_tdata;
 assign m_axis_tuser_1 = s_axis_tuser;
 assign m_axis_tkeep_1 = s_axis_tkeep;
 assign m_axis_tlast_1 = s_axis_tlast;
-assign m_axis_tvalid_1 = (cur_queue==1?1:0) & s_axis_tvalid;
+assign m_axis_tvalid_1 = (cur_queue==1?1:0) & s_axis_tvalid & m_axis_tready_1;
 
 assign m_axis_tdata_2 = s_axis_tdata;
 assign m_axis_tuser_2 = s_axis_tuser;
 assign m_axis_tkeep_2 = s_axis_tkeep;
 assign m_axis_tlast_2 = s_axis_tlast;
-assign m_axis_tvalid_2 = (cur_queue==2?1:0) & s_axis_tvalid;
+assign m_axis_tvalid_2 = (cur_queue==2?1:0) & s_axis_tvalid & m_axis_tready_2;
 
 assign m_axis_tdata_3 = s_axis_tdata;
 assign m_axis_tuser_3 = s_axis_tuser;
 assign m_axis_tkeep_3 = s_axis_tkeep;
 assign m_axis_tlast_3 = s_axis_tlast;
-assign m_axis_tvalid_3 = (cur_queue==3?1:0) & s_axis_tvalid;
+assign m_axis_tvalid_3 = (cur_queue==3?1:0) & s_axis_tvalid & m_axis_tready_3;
 // ==================================================
 
 

@@ -9,6 +9,21 @@
 `define  REG_CTRL_TOKEN_DEFAULT				32'h00000000
 `define  REG_CTRL_TOKEN_ADDR				32'h8
 
+`define  REG_VLAN_1_CNT_BITS				31:0
+`define  REG_VLAN_1_CNT_WIDTH				32
+`define  REG_VLAN_1_CNT_DEFAULT				32'h00000000
+`define  REG_VLAN_1_CNT_ADDR				32'hc
+
+`define  REG_VLAN_2_CNT_BITS				31:0
+`define  REG_VLAN_2_CNT_WIDTH				32
+`define  REG_VLAN_2_CNT_DEFAULT				32'h00000000
+`define  REG_VLAN_2_CNT_ADDR				32'h10
+
+`define  REG_VLAN_3_CNT_BITS				31:0
+`define  REG_VLAN_3_CNT_WIDTH				32
+`define  REG_VLAN_3_CNT_DEFAULT				32'h00000000
+`define  REG_VLAN_3_CNT_ADDR				32'h14
+
 module rmt_wrapper #(
 	// Slave AXI parameters
 	// AXI Stream parameters
@@ -148,11 +163,23 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_1;
 wire										ctrl_s_axis_tvalid_1;
 wire										ctrl_s_axis_tlast_1;
 
+reg  [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_1_r;
+reg  [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_1_r;
+reg  [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_1_r;
+reg 										ctrl_s_axis_tvalid_1_r;
+reg 										ctrl_s_axis_tlast_1_r;
+
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_2;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_2;
 wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_2;
 wire 										ctrl_s_axis_tvalid_2;
 wire 										ctrl_s_axis_tlast_2;
+
+reg [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_2_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			ctrl_s_axis_tkeep_2_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_2_r;
+reg 										ctrl_s_axis_tvalid_2_r;
+reg 										ctrl_s_axis_tlast_2_r;
 
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_3;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_3;
@@ -160,11 +187,23 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_3;
 wire 										ctrl_s_axis_tvalid_3;
 wire 										ctrl_s_axis_tlast_3;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_3_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			ctrl_s_axis_tkeep_3_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_3_r;
+reg 										ctrl_s_axis_tvalid_3_r;
+reg 										ctrl_s_axis_tlast_3_r;
+
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_4;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_4;
 wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_4;
 wire 										ctrl_s_axis_tvalid_4;
 wire 										ctrl_s_axis_tlast_4;
+
+reg [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_4_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			ctrl_s_axis_tkeep_4_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_4_r;
+reg 										ctrl_s_axis_tvalid_4_r;
+reg 										ctrl_s_axis_tlast_4_r;
 
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_5;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_5;
@@ -172,11 +211,23 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_5;
 wire 										ctrl_s_axis_tvalid_5;
 wire 										ctrl_s_axis_tlast_5;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_5_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_5_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_5_r;
+reg 										ctrl_s_axis_tvalid_5_r;
+reg 										ctrl_s_axis_tlast_5_r;
+
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_6;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_6;
 wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_6;
 wire 										ctrl_s_axis_tvalid_6;
 wire 										ctrl_s_axis_tlast_6;
+
+reg [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_6_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_6_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_6_r;
+reg 										ctrl_s_axis_tvalid_6_r;
+reg 										ctrl_s_axis_tlast_6_r;
 
 wire [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_7;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_7;
@@ -184,13 +235,23 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_7;
 wire 										ctrl_s_axis_tvalid_7;
 wire 										ctrl_s_axis_tlast_7;
 
-
+reg [C_S_AXIS_DATA_WIDTH-1:0]				ctrl_s_axis_tdata_7_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]		ctrl_s_axis_tkeep_7_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				ctrl_s_axis_tuser_7_r;
+reg 										ctrl_s_axis_tvalid_7_r;
+reg 										ctrl_s_axis_tlast_7_r;
     // define registers
 	wire [`REG_VLAN_DROP_FLAGS_BITS] vlan_drop_flags_reg;
 	reg [`REG_CTRL_TOKEN_BITS] ctrl_token_reg;
+    reg      [`REG_VLAN_1_CNT_BITS]    vlan_1_cnt_reg;
+    reg      [`REG_VLAN_2_CNT_BITS]    vlan_2_cnt_reg;
+    reg      [`REG_VLAN_3_CNT_BITS]    vlan_3_cnt_reg;
 
 	reg [31:0] vlan_drop_flags;
 	wire [31:0] ctrl_token;
+	wire [31:0] vlan_1_cnt;
+	wire [31:0] vlan_2_cnt;
+	wire [31:0] vlan_3_cnt;
 
 	wire resetn_sync;
 //Registers section
@@ -228,6 +289,9 @@ wire 										ctrl_s_axis_tlast_7;
    // Register ports
    .vlan_drop_flags_reg          (vlan_drop_flags_reg),
    .ctrl_token_reg          (ctrl_token_reg),
+   .vlan_1_cnt_reg          (vlan_1_cnt_reg),
+   .vlan_2_cnt_reg          (vlan_2_cnt_reg),
+   .vlan_3_cnt_reg          (vlan_3_cnt_reg),
    // Global Registers - user can select if to use
    .cpu_resetn_soft(),//software reset, after cpu module
    .resetn_soft    (),//software reset to cpu module (from central reset management)
@@ -237,11 +301,17 @@ wire 										ctrl_s_axis_tlast_7;
 always @(posedge clk)
 	if (~resetn_sync) begin
 		ctrl_token_reg <= #1 `REG_CTRL_TOKEN_DEFAULT;
+		vlan_1_cnt_reg <= #1 `REG_VLAN_1_CNT_DEFAULT;
+		vlan_2_cnt_reg <= #1 `REG_VLAN_2_CNT_DEFAULT;
+		vlan_3_cnt_reg <= #1 `REG_VLAN_3_CNT_DEFAULT;
 		vlan_drop_flags <= 0;
 	end
 	else begin
 		vlan_drop_flags <= #1 vlan_drop_flags_reg;
 		ctrl_token_reg <= #1 ctrl_token;
+		vlan_1_cnt_reg <= #1 vlan_1_cnt;
+		vlan_2_cnt_reg <= #1 vlan_2_cnt;
+		vlan_3_cnt_reg <= #1 vlan_3_cnt;
     end
 
 
@@ -257,6 +327,9 @@ pkt_filter #(
 	//
 	.vlan_drop_flags(vlan_drop_flags),
 	.ctrl_token(ctrl_token),
+	.vlan_1_cnt(vlan_1_cnt),
+	.vlan_2_cnt(vlan_2_cnt),
+	.vlan_3_cnt(vlan_3_cnt),
 
 	// input Slave AXI Stream
 	.s_axis_tdata(s_axis_tdata),
@@ -300,9 +373,9 @@ wire [C_NUM_QUEUES-1:0]				pkt_fifo_rd_en;
 wire [C_NUM_QUEUES-1:0]				pkt_fifo_nearly_full;
 wire [C_NUM_QUEUES-1:0]				pkt_fifo_empty;
 
-assign s_axis_tready_f = !pkt_fifo_nearly_full[0] ||
-							!pkt_fifo_nearly_full[1] ||
-							!pkt_fifo_nearly_full[2] ||
+assign s_axis_tready_f = !pkt_fifo_nearly_full[0] && 
+							!pkt_fifo_nearly_full[1] &&
+							!pkt_fifo_nearly_full[2] &&
 							!pkt_fifo_nearly_full[3];
 
 generate 
@@ -312,7 +385,7 @@ generate
 	// pkt fifos
 		fallthrough_small_fifo #(
 			.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
-			.MAX_DEPTH_BITS(8)
+			.MAX_DEPTH_BITS(4)
 		)
 		pkt_fifo
 		(
@@ -347,23 +420,31 @@ wire							phv_fifo_rd_en [C_NUM_QUEUES-1:0];
 wire							phv_fifo_nearly_full [C_NUM_QUEUES-1:0];
 wire							phv_fifo_empty [C_NUM_QUEUES-1:0];
 
+wire [511:0] high_phv_out [C_NUM_QUEUES-1:0];
+wire [511:0] low_phv_out [C_NUM_QUEUES-1:0];
+
+assign phv_fifo_out[0] = {high_phv_out[0], low_phv_out[0]};
+assign phv_fifo_out[1] = {high_phv_out[1], low_phv_out[1]};
+assign phv_fifo_out[2] = {high_phv_out[2], low_phv_out[2]};
+assign phv_fifo_out[3] = {high_phv_out[3], low_phv_out[3]};
+
 generate
 	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
-		sub_phv_fifo
+		sub_phv_fifo_1
 		// multiple PHV fifos
 		fallthrough_small_fifo #(
-			.WIDTH(PKT_VEC_WIDTH),
-			.MAX_DEPTH_BITS(8)
+			.WIDTH(512),
+			.MAX_DEPTH_BITS(6)
 		)
-		phv_fifo
+		phv_fifo_1
 		(
-			.din			(last_stg_phv_out[i]),
+			.din			(last_stg_phv_out[i][511:0]),
 			.wr_en			(last_stg_phv_out_valid[i]),
 			// .din			(stg1_phv_out),
 			// .wr_en			(stg1_phv_out_valid_w),
 		
 			.rd_en			(phv_fifo_rd_en[i]),
-			.dout			(phv_fifo_out[i]),
+			.dout			(low_phv_out[i]),
 		
 			.full			(),
 			.prog_full		(),
@@ -374,6 +455,35 @@ generate
 		);
 	end
 endgenerate
+
+generate
+	for (i=0; i<C_NUM_QUEUES; i=i+1) begin:
+		sub_phv_fifo_2
+		// multiple PHV fifos
+		fallthrough_small_fifo #(
+			.WIDTH(512),
+			.MAX_DEPTH_BITS(6)
+		)
+		phv_fifo_2
+		(
+			.din			(last_stg_phv_out[i][1023:512]),
+			.wr_en			(last_stg_phv_out_valid[i]),
+			// .din			(stg1_phv_out),
+			// .wr_en			(stg1_phv_out_valid_w),
+		
+			.rd_en			(phv_fifo_rd_en[i]),
+			.dout			(high_phv_out[i]),
+		
+			.full			(),
+			.prog_full		(),
+			.nearly_full	(),
+			.empty			(),
+			.reset			(~aresetn),
+			.clk			(clk)
+		);
+	end
+endgenerate
+
 
 parser_top #(
     .C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH), //for 100g mac exclusively
@@ -388,7 +498,8 @@ phv_parser
 	.s_axis_tdata	(s_axis_tdata_f_r),
 	.s_axis_tuser	(s_axis_tuser_f_r),
 	.s_axis_tkeep	(s_axis_tkeep_f_r),
-	.s_axis_tvalid	(s_axis_tvalid_f_r & s_axis_tready_f),
+	// .s_axis_tvalid	(s_axis_tvalid_f_r & s_axis_tready_f),
+	.s_axis_tvalid	(s_axis_tvalid_f_r),
 	.s_axis_tlast	(s_axis_tlast_f_r),
 	.s_axis_tready	(s_axis_tready_p),
 
@@ -432,11 +543,11 @@ phv_parser
 	.m_axis_tready_3				(~pkt_fifo_nearly_full[3]),
 
 	// control path
-    .ctrl_s_axis_tdata(ctrl_s_axis_tdata_1),
-	.ctrl_s_axis_tuser(ctrl_s_axis_tuser_1),
-	.ctrl_s_axis_tkeep(ctrl_s_axis_tkeep_1),
-	.ctrl_s_axis_tlast(ctrl_s_axis_tlast_1),
-	.ctrl_s_axis_tvalid(ctrl_s_axis_tvalid_1),
+    .ctrl_s_axis_tdata(ctrl_s_axis_tdata_1_r),
+	.ctrl_s_axis_tuser(ctrl_s_axis_tuser_1_r),
+	.ctrl_s_axis_tkeep(ctrl_s_axis_tkeep_1_r),
+	.ctrl_s_axis_tlast(ctrl_s_axis_tlast_1_r),
+	.ctrl_s_axis_tvalid(ctrl_s_axis_tvalid_1_r),
 
     .ctrl_m_axis_tdata(ctrl_s_axis_tdata_2),
 	.ctrl_m_axis_tuser(ctrl_s_axis_tuser_2),
@@ -473,11 +584,11 @@ stage0
 	.stage_ready_in			(stg1_ready),
 
 	// control path
-    .c_s_axis_tdata(ctrl_s_axis_tdata_2),
-	.c_s_axis_tuser(ctrl_s_axis_tuser_2),
-	.c_s_axis_tkeep(ctrl_s_axis_tkeep_2),
-	.c_s_axis_tlast(ctrl_s_axis_tlast_2),
-	.c_s_axis_tvalid(ctrl_s_axis_tvalid_2),
+    .c_s_axis_tdata(ctrl_s_axis_tdata_2_r),
+	.c_s_axis_tuser(ctrl_s_axis_tuser_2_r),
+	.c_s_axis_tkeep(ctrl_s_axis_tkeep_2_r),
+	.c_s_axis_tlast(ctrl_s_axis_tlast_2_r),
+	.c_s_axis_tvalid(ctrl_s_axis_tvalid_2_r),
 
     .c_m_axis_tdata(ctrl_s_axis_tdata_3),
 	.c_m_axis_tuser(ctrl_s_axis_tuser_3),
@@ -514,11 +625,11 @@ stage1
 	.stage_ready_in			(stg2_ready),
 
 	// control path
-    .c_s_axis_tdata(ctrl_s_axis_tdata_3),
-	.c_s_axis_tuser(ctrl_s_axis_tuser_3),
-	.c_s_axis_tkeep(ctrl_s_axis_tkeep_3),
-	.c_s_axis_tlast(ctrl_s_axis_tlast_3),
-	.c_s_axis_tvalid(ctrl_s_axis_tvalid_3),
+    .c_s_axis_tdata(ctrl_s_axis_tdata_3_r),
+	.c_s_axis_tuser(ctrl_s_axis_tuser_3_r),
+	.c_s_axis_tkeep(ctrl_s_axis_tkeep_3_r),
+	.c_s_axis_tlast(ctrl_s_axis_tlast_3_r),
+	.c_s_axis_tvalid(ctrl_s_axis_tvalid_3_r),
 
     .c_m_axis_tdata(ctrl_s_axis_tdata_4),
 	.c_m_axis_tuser(ctrl_s_axis_tuser_4),
@@ -555,11 +666,11 @@ stage2
 	.stage_ready_in			(stg3_ready),
 
 	// control path
-    .c_s_axis_tdata(ctrl_s_axis_tdata_4),
-	.c_s_axis_tuser(ctrl_s_axis_tuser_4),
-	.c_s_axis_tkeep(ctrl_s_axis_tkeep_4),
-	.c_s_axis_tlast(ctrl_s_axis_tlast_4),
-	.c_s_axis_tvalid(ctrl_s_axis_tvalid_4),
+    .c_s_axis_tdata(ctrl_s_axis_tdata_4_r),
+	.c_s_axis_tuser(ctrl_s_axis_tuser_4_r),
+	.c_s_axis_tkeep(ctrl_s_axis_tkeep_4_r),
+	.c_s_axis_tlast(ctrl_s_axis_tlast_4_r),
+	.c_s_axis_tvalid(ctrl_s_axis_tvalid_4_r),
 
     .c_m_axis_tdata(ctrl_s_axis_tdata_5),
 	.c_m_axis_tuser(ctrl_s_axis_tuser_5),
@@ -595,11 +706,11 @@ stage3
 	.stage_ready_in			(last_stg_ready),
 
 	// control path
-    .c_s_axis_tdata(ctrl_s_axis_tdata_5),
-	.c_s_axis_tuser(ctrl_s_axis_tuser_5),
-	.c_s_axis_tkeep(ctrl_s_axis_tkeep_5),
-	.c_s_axis_tlast(ctrl_s_axis_tlast_5),
-	.c_s_axis_tvalid(ctrl_s_axis_tvalid_5),
+    .c_s_axis_tdata(ctrl_s_axis_tdata_5_r),
+	.c_s_axis_tuser(ctrl_s_axis_tuser_5_r),
+	.c_s_axis_tkeep(ctrl_s_axis_tkeep_5_r),
+	.c_s_axis_tlast(ctrl_s_axis_tlast_5_r),
+	.c_s_axis_tvalid(ctrl_s_axis_tvalid_5_r),
 
     .c_m_axis_tdata(ctrl_s_axis_tdata_6),
 	.c_m_axis_tuser(ctrl_s_axis_tuser_6),
@@ -644,11 +755,11 @@ stage4
 	.phv_fifo_ready_3		(~phv_fifo_nearly_full[3]),
 
 	// control path
-    .c_s_axis_tdata(ctrl_s_axis_tdata_6),
-	.c_s_axis_tuser(ctrl_s_axis_tuser_6),
-	.c_s_axis_tkeep(ctrl_s_axis_tkeep_6),
-	.c_s_axis_tlast(ctrl_s_axis_tlast_6),
-	.c_s_axis_tvalid(ctrl_s_axis_tvalid_6),
+    .c_s_axis_tdata(ctrl_s_axis_tdata_6_r),
+	.c_s_axis_tuser(ctrl_s_axis_tuser_6_r),
+	.c_s_axis_tkeep(ctrl_s_axis_tkeep_6_r),
+	.c_s_axis_tlast(ctrl_s_axis_tlast_6_r),
+	.c_s_axis_tvalid(ctrl_s_axis_tvalid_6_r),
 
     .c_m_axis_tdata(ctrl_s_axis_tdata_7),
 	.c_m_axis_tuser(ctrl_s_axis_tuser_7),
@@ -698,11 +809,11 @@ generate
 			.depar_out_tready		(depar_out_tready[i]), // input
 		
 			// control path
-			.ctrl_s_axis_tdata(ctrl_s_axis_tdata_7),
-			.ctrl_s_axis_tuser(ctrl_s_axis_tuser_7),
-			.ctrl_s_axis_tkeep(ctrl_s_axis_tkeep_7),
-			.ctrl_s_axis_tlast(ctrl_s_axis_tlast_7),
-			.ctrl_s_axis_tvalid(ctrl_s_axis_tvalid_7)
+			.ctrl_s_axis_tdata(ctrl_s_axis_tdata_7_r),
+			.ctrl_s_axis_tuser(ctrl_s_axis_tuser_7_r),
+			.ctrl_s_axis_tkeep(ctrl_s_axis_tkeep_7_r),
+			.ctrl_s_axis_tlast(ctrl_s_axis_tlast_7_r),
+			.ctrl_s_axis_tvalid(ctrl_s_axis_tvalid_7_r)
 		);
 	end
 endgenerate
@@ -818,6 +929,96 @@ always @(posedge clk) begin
 		stg2_vlan_valid_out_r <= stg2_vlan_valid_out;
 		stg3_vlan_out_r <= stg3_vlan_out;
 		stg3_vlan_valid_out_r <= stg3_vlan_valid_out;
+	end
+end
+
+always @(posedge clk) begin
+	if (~aresetn) begin
+		ctrl_s_axis_tdata_1_r <= 0;
+		ctrl_s_axis_tuser_1_r <= 0;
+		ctrl_s_axis_tkeep_1_r <= 0;
+		ctrl_s_axis_tlast_1_r <= 0;
+		ctrl_s_axis_tvalid_1_r <= 0;
+
+		ctrl_s_axis_tdata_2_r <= 0;
+		ctrl_s_axis_tuser_2_r <= 0;
+		ctrl_s_axis_tkeep_2_r <= 0;
+		ctrl_s_axis_tlast_2_r <= 0;
+		ctrl_s_axis_tvalid_2_r <= 0;
+
+		ctrl_s_axis_tdata_3_r <= 0;
+		ctrl_s_axis_tuser_3_r <= 0;
+		ctrl_s_axis_tkeep_3_r <= 0;
+		ctrl_s_axis_tlast_3_r <= 0;
+		ctrl_s_axis_tvalid_3_r <= 0;
+
+		ctrl_s_axis_tdata_4_r <= 0;
+		ctrl_s_axis_tuser_4_r <= 0;
+		ctrl_s_axis_tkeep_4_r <= 0;
+		ctrl_s_axis_tlast_4_r <= 0;
+		ctrl_s_axis_tvalid_4_r <= 0;
+
+		ctrl_s_axis_tdata_5_r <= 0;
+		ctrl_s_axis_tuser_5_r <= 0;
+		ctrl_s_axis_tkeep_5_r <= 0;
+		ctrl_s_axis_tlast_5_r <= 0;
+		ctrl_s_axis_tvalid_5_r <= 0;
+
+		ctrl_s_axis_tdata_6_r <= 0;
+		ctrl_s_axis_tuser_6_r <= 0;
+		ctrl_s_axis_tkeep_6_r <= 0;
+		ctrl_s_axis_tlast_6_r <= 0;
+		ctrl_s_axis_tvalid_6_r <= 0;
+
+		ctrl_s_axis_tdata_7_r <= 0;
+		ctrl_s_axis_tuser_7_r <= 0;
+		ctrl_s_axis_tkeep_7_r <= 0;
+		ctrl_s_axis_tlast_7_r <= 0;
+		ctrl_s_axis_tvalid_7_r <= 0;
+	end
+	else begin
+		ctrl_s_axis_tdata_1_r <= ctrl_s_axis_tdata_1;
+		ctrl_s_axis_tuser_1_r <= ctrl_s_axis_tuser_1;
+		ctrl_s_axis_tkeep_1_r <= ctrl_s_axis_tkeep_1;
+		ctrl_s_axis_tlast_1_r <= ctrl_s_axis_tlast_1;
+		ctrl_s_axis_tvalid_1_r <= ctrl_s_axis_tvalid_1;
+
+		ctrl_s_axis_tdata_2_r <= ctrl_s_axis_tdata_2;
+		ctrl_s_axis_tuser_2_r <= ctrl_s_axis_tuser_2;
+		ctrl_s_axis_tkeep_2_r <= ctrl_s_axis_tkeep_2;
+		ctrl_s_axis_tlast_2_r <= ctrl_s_axis_tlast_2;
+		ctrl_s_axis_tvalid_2_r <= ctrl_s_axis_tvalid_2;
+
+		ctrl_s_axis_tdata_3_r <= ctrl_s_axis_tdata_3;
+		ctrl_s_axis_tuser_3_r <= ctrl_s_axis_tuser_3;
+		ctrl_s_axis_tkeep_3_r <= ctrl_s_axis_tkeep_3;
+		ctrl_s_axis_tlast_3_r <= ctrl_s_axis_tlast_3;
+		ctrl_s_axis_tvalid_3_r <= ctrl_s_axis_tvalid_3;
+
+		ctrl_s_axis_tdata_4_r <= ctrl_s_axis_tdata_4;
+		ctrl_s_axis_tuser_4_r <= ctrl_s_axis_tuser_4;
+		ctrl_s_axis_tkeep_4_r <= ctrl_s_axis_tkeep_4;
+		ctrl_s_axis_tlast_4_r <= ctrl_s_axis_tlast_4;
+		ctrl_s_axis_tvalid_4_r <= ctrl_s_axis_tvalid_4;
+
+		ctrl_s_axis_tdata_5_r <= ctrl_s_axis_tdata_5;
+		ctrl_s_axis_tuser_5_r <= ctrl_s_axis_tuser_5;
+		ctrl_s_axis_tkeep_5_r <= ctrl_s_axis_tkeep_5;
+		ctrl_s_axis_tlast_5_r <= ctrl_s_axis_tlast_5;
+		ctrl_s_axis_tvalid_5_r <= ctrl_s_axis_tvalid_5;
+
+		ctrl_s_axis_tdata_6_r <= ctrl_s_axis_tdata_6;
+		ctrl_s_axis_tuser_6_r <= ctrl_s_axis_tuser_6;
+		ctrl_s_axis_tkeep_6_r <= ctrl_s_axis_tkeep_6;
+		ctrl_s_axis_tlast_6_r <= ctrl_s_axis_tlast_6;
+		ctrl_s_axis_tvalid_6_r <= ctrl_s_axis_tvalid_6;
+
+		ctrl_s_axis_tdata_7_r <= ctrl_s_axis_tdata_7;
+		ctrl_s_axis_tuser_7_r <= ctrl_s_axis_tuser_7;
+		ctrl_s_axis_tkeep_7_r <= ctrl_s_axis_tkeep_7;
+		ctrl_s_axis_tlast_7_r <= ctrl_s_axis_tlast_7;
+		ctrl_s_axis_tvalid_7_r <= ctrl_s_axis_tvalid_7;
+
 	end
 end
 

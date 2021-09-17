@@ -14,6 +14,9 @@ module pkt_filter #(
 
 	input [31:0]							vlan_drop_flags,
 	output reg [31:0]						ctrl_token,
+	output reg [31:0]						vlan_1_cnt,
+	output reg [31:0]						vlan_2_cnt,
+	output reg [31:0]						vlan_3_cnt,
 
 	// input Slave AXI Stream
 	input [C_S_AXIS_DATA_WIDTH-1:0]			s_axis_tdata,
@@ -40,10 +43,10 @@ module pkt_filter #(
 
 );
 
-(* mark_debug = "true" *) wire [31:0] dbg_vlan;
-(* mark_debug = "true" *) wire [31:0] dbg_ctrl;
-assign dbg_vlan = vlan_drop_flags;
-assign dbg_ctrl = ctrl_token;
+// (* mark_debug = "true" *) wire [31:0] dbg_vlan;
+// (* mark_debug = "true" *) wire [31:0] dbg_ctrl;
+// assign dbg_vlan = vlan_drop_flags;
+// assign dbg_ctrl = ctrl_token;
 
 localparam WAIT_FIRST_PKT	= 0,
 		   WAIT_SECOND_PKT	= 1,
@@ -76,8 +79,14 @@ reg [3:0] state, state_next;
 reg								c_switch, c_switch_next;
 //
 reg [31:0]						ctrl_token_next;
+reg [31:0]						vlan_1_cnt_next;
+reg [31:0]						vlan_2_cnt_next;
+reg [31:0]						vlan_3_cnt_next;
 wire [11:0]						vlan_id_w;
 wire [31:0]						vlan_id_one_hot_w;
+
+reg [4:0]			vlan_id;
+reg [4:0]			vlan_id_next;
 
 
 // pkt fifo
@@ -95,12 +104,12 @@ assign vlan_id_one_hot_w = (1'b1 << vlan_id_w[8:4]);
 
 fallthrough_small_fifo #(
 	.WIDTH(C_S_AXIS_DATA_WIDTH + C_S_AXIS_TUSER_WIDTH + C_S_AXIS_DATA_WIDTH/8 + 1),
-	.MAX_DEPTH_BITS(4)
+	.MAX_DEPTH_BITS(5)
 )
 pkt_fifo
 (
 	.din									({s_axis_tdata, s_axis_tuser, s_axis_tkeep, s_axis_tlast}),
-	.wr_en									(s_axis_tvalid & ~pkt_fifo_nearly_full),
+	.wr_en									(s_axis_tvalid),
 	.rd_en									(pkt_fifo_rd_en),
 	.dout									({tdata_fifo, tuser_fifo, tkeep_fifo, tlast_fifo}),
 	.full									(),
@@ -133,12 +142,18 @@ always @(*) begin
 	state_next = state;
 	ctrl_token_next = ctrl_token;
 
+	vlan_id_next = vlan_id;
+	vlan_1_cnt_next = vlan_1_cnt;
+	vlan_2_cnt_next = vlan_2_cnt;
+	vlan_3_cnt_next = vlan_3_cnt;
+
 	pkt_fifo_rd_en = 0;
 
 	case (state) 
 		WAIT_FIRST_PKT: begin
 			// 1st packet
 			if (!pkt_fifo_empty) begin
+				vlan_id_next = vlan_id_w[8:4];
 				if (vlan_id_one_hot_w  & vlan_drop_flags) begin
 					state_next = DROP_PKT;
 				end
@@ -168,6 +183,16 @@ always @(*) begin
 				end
 				else begin
 					c_switch_next = 0;
+
+					if (vlan_id == 1) begin
+						vlan_1_cnt_next = vlan_1_cnt+1;
+					end
+					else if (vlan_id == 2) begin
+						vlan_2_cnt_next = vlan_2_cnt+1;
+					end
+					else if (vlan_id == 3) begin
+						vlan_3_cnt_next = vlan_3_cnt+1;
+					end
 				end
 
 				state_next = SEND_FIRST_PKT;
@@ -260,12 +285,22 @@ always @(posedge clk or negedge aresetn) begin
 		c_switch <= 0;
 		//
 		ctrl_token <= 0;
+		//
+		vlan_id <= 0;
+		vlan_1_cnt <= 0;
+		vlan_2_cnt <= 0;
+		vlan_3_cnt <= 0;
 	end
 	else begin
 		state <= state_next;
 		c_switch <= c_switch_next;
 
 		ctrl_token <= ctrl_token_next;
+		//
+		vlan_id <= vlan_id_next;
+		vlan_1_cnt <= vlan_1_cnt_next;
+		vlan_2_cnt <= vlan_2_cnt_next;
+		vlan_3_cnt <= vlan_3_cnt_next;
 		if (!c_switch) begin
 			m_axis_tdata <= r_tdata;
 			m_axis_tkeep <= r_tkeep;

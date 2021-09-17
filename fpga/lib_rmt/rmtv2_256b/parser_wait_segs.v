@@ -47,9 +47,10 @@ localparam	WAIT_1ST_SEG=0,
 			WAIT_4TH_SEG=3,
 			OUTPUT_SEGS=4,
 			EMPTY_1CYCLE=5,
-			EMPTY_2CYCLE=6;
+			EMPTY_2CYCLE=6,
+			WAIT_TILL_LAST=7;
 
-reg [2:0]	state, state_next;
+reg [3:0]	state, state_next;
 reg [C_NUM_SEGS*C_AXIS_DATA_WIDTH-1:0] tdata_segs_next;
 reg [C_AXIS_TUSER_WIDTH-1:0] tuser_1st_next;
 reg segs_valid_next;
@@ -128,6 +129,16 @@ always @(*) begin
 				tdata_segs_next[3*C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = s_axis_tdata;
 
 				segs_valid_next = 1;
+				if (s_axis_tlast) begin
+					state_next = WAIT_1ST_SEG;
+				end
+				else begin
+					state_next = WAIT_TILL_LAST;
+				end
+			end
+		end
+		WAIT_TILL_LAST: begin
+			if (s_axis_tlast && s_axis_tvalid) begin
 				state_next = WAIT_1ST_SEG;
 			end
 		end

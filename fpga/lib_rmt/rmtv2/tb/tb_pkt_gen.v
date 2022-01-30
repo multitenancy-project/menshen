@@ -71,7 +71,7 @@ rmt_wrapper #(
 	.m_axis_tkeep(m_axis_tkeep),
 	.m_axis_tuser(m_axis_tuser),
 	.m_axis_tvalid(m_axis_tvalid),
-	.m_axis_tready(1),
+	.m_axis_tready(1'b1),
 	.m_axis_tlast(m_axis_tlast)
 	
 );
@@ -81,6 +81,8 @@ reg [63:0] counter;
 reg [63:0] c_counter, c_counter_next;
 reg [63:0] cycle_counter;
 reg [63:0] byte_counter;
+reg [63:0] snd_counter, snd_counter_next;
+reg [63:0] rcv_counter;
 
 localparam	PKT_0=0,
 			PKT_1=1;
@@ -104,9 +106,11 @@ always @(*) begin
 	tlast = 0;
 	tvalid = 0;
 
+	snd_counter_next = snd_counter;
+
 	case (state)
 		PKT_0: begin
-			if (start) begin
+			if (start && s_axis_tready) begin
 				tdata = 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000;
 				tkeep = {64{1'b1}};
 				tuser = 0;
@@ -118,7 +122,7 @@ always @(*) begin
 			end
 		end
 		PKT_1: begin
-			if (start) begin
+			if (start && s_axis_tready) begin
 				if (pkt_len > c_counter) begin
 					tdata = c_counter + counter;
 					tkeep = {64{1'b1}};
@@ -136,6 +140,8 @@ always @(*) begin
 					tvalid = 1;
 					state_next = PKT_0;
 					c_counter_next = 0;
+
+					snd_counter_next = snd_counter+1;
 				end
 			end
 		end
@@ -149,6 +155,8 @@ always @(posedge clk) begin
 		cycle_counter <= 0;
 
 		state <= PKT_0;
+
+		snd_counter <= 0;
 		//
 		s_axis_tdata <= 0;
 		s_axis_tkeep <= 0;
@@ -162,6 +170,7 @@ always @(posedge clk) begin
 		if (start) begin
 			cycle_counter <= cycle_counter+1;
 		end
+		snd_counter <= snd_counter_next;
 		//
 		s_axis_tdata <= tdata;
 		s_axis_tkeep <= tkeep;
@@ -181,10 +190,15 @@ always@(posedge clk) begin
 		check_seq_counter <= 1;
 		pk_start <= 1;
 		byte_counter <= 0;
+
+		rcv_counter <= 0;
 	end
 	if(m_axis_tvalid) begin
 		check_counter <= check_counter +1;
 		byte_counter <= byte_counter + 512/8;
+		if (m_axis_tlast) begin
+			rcv_counter <= rcv_counter+1;
+		end
 		if(pk_start == 1) begin
 			pk_start <= 2;
 		end
@@ -198,7 +212,7 @@ always@(posedge clk) begin
 			end
 		end
 		else if(m_axis_tlast) begin
-			if(m_axis_tkeep != {6{1'b1}}) begin
+			if(m_axis_tkeep != {64{1'b1}}) begin
 				$display("ERROR in compare %x with %x", m_axis_tdata, check_counter + check_seq_counter);
 			end
 			$display("DEBUG, received: %d", m_axis_tdata);
@@ -209,16 +223,17 @@ always@(posedge clk) begin
 			pk_start <= 1;
 			check_counter <= 0;
 			check_seq_counter <= check_seq_counter + 1; 
+
 		end
 	end
 end
 
 always @(*) begin
 	if (byte_counter >= 16000 * 70 || counter > 10000) begin
-		aresetn = 0;
+		// aresetn = 0;
 		start = 0;
 
-		$finish;
+		// $finish;
 	end
 end
 

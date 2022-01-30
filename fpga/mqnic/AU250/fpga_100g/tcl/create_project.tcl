@@ -17,6 +17,8 @@ lappend SYN_FILES rtl/one_in_one_out/fpga_core.v
 #
 lappend SYN_FILES rtl/debounce_switch.v
 lappend SYN_FILES rtl/sync_signal.v
+# lappend SYN_FILES rtl/one_in_one_out/interface-perf.v
+# lappend SYN_FILES rtl/one_in_one_out/port-perf.v
 lappend SYN_FILES rtl/one_in_one_out/interface.v
 lappend SYN_FILES rtl/one_in_one_out/port.v
 #

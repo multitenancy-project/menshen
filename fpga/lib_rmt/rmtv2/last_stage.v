@@ -25,20 +25,20 @@ module last_stage #(
 	input									vlan_valid_in,
 
 	//
-    output [PHV_LEN-1:0]         phv_out_0,
-    output                       phv_out_valid_0,
+    output reg [PHV_LEN-1:0]         phv_out_0,
+    output reg                       phv_out_valid_0,
 	input                        phv_fifo_ready_0,
 
-    output [PHV_LEN-1:0]         phv_out_1,
-    output                       phv_out_valid_1,
+    output reg [PHV_LEN-1:0]         phv_out_1,
+    output reg                       phv_out_valid_1,
 	input                        phv_fifo_ready_1,
 
-    output [PHV_LEN-1:0]         phv_out_2,
-    output                       phv_out_valid_2,
+    output reg [PHV_LEN-1:0]         phv_out_2,
+    output reg                       phv_out_valid_2,
 	input                        phv_fifo_ready_2,
 
-    output [PHV_LEN-1:0]         phv_out_3,
-    output                       phv_out_valid_3,
+    output reg [PHV_LEN-1:0]         phv_out_3,
+    output reg                       phv_out_valid_3,
 	input                        phv_fifo_ready_3,
 
 
@@ -76,6 +76,12 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_1;
 wire 										c_s_axis_tvalid_1;
 wire 										c_s_axis_tlast_1;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_1_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			c_s_axis_tkeep_1_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_1_r;
+reg 										c_s_axis_tvalid_1_r;
+reg 										c_s_axis_tlast_1_r;
+
 //control path 2 (lkup2action)
 wire [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_2;
 wire [((C_S_AXIS_DATA_WIDTH/8))-1:0]		c_s_axis_tkeep_2;
@@ -83,6 +89,12 @@ wire [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_2;
 wire 										c_s_axis_tvalid_2;
 wire 										c_s_axis_tlast_2;
 
+reg [C_S_AXIS_DATA_WIDTH-1:0]				c_s_axis_tdata_2_r;
+reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]			c_s_axis_tkeep_2_r;
+reg [C_S_AXIS_TUSER_WIDTH-1:0]				c_s_axis_tuser_2_r;
+reg 										c_s_axis_tvalid_2_r;
+reg 										c_s_axis_tlast_2_r;
+//
 
 //lookup_engine to action_engine
 wire [ACT_LEN*25-1:0]        lookup2action_action;
@@ -178,11 +190,11 @@ lookup_engine_top #(
 	.act_vlan_ready				(action2lookup_ready),
 
     //control path
-    .c_s_axis_tdata(c_s_axis_tdata_1),
-	.c_s_axis_tuser(c_s_axis_tuser_1),
-	.c_s_axis_tkeep(c_s_axis_tkeep_1),
-	.c_s_axis_tvalid(c_s_axis_tvalid_1),
-	.c_s_axis_tlast(c_s_axis_tlast_1),
+    .c_s_axis_tdata(c_s_axis_tdata_1_r),
+	.c_s_axis_tuser(c_s_axis_tuser_1_r),
+	.c_s_axis_tkeep(c_s_axis_tkeep_1_r),
+	.c_s_axis_tvalid(c_s_axis_tvalid_1_r),
+	.c_s_axis_tlast(c_s_axis_tlast_1_r),
 
     .c_m_axis_tdata(c_s_axis_tdata_2),
 	.c_m_axis_tuser(c_s_axis_tuser_2),
@@ -220,11 +232,11 @@ action_engine #(
 	.vlan_out_valid	(),
 	.vlan_out_ready		(),
     //control path
-    .c_s_axis_tdata(c_s_axis_tdata_2),
-	.c_s_axis_tuser(c_s_axis_tuser_2),
-	.c_s_axis_tkeep(c_s_axis_tkeep_2),
-	.c_s_axis_tvalid(c_s_axis_tvalid_2),
-	.c_s_axis_tlast(c_s_axis_tlast_2),
+    .c_s_axis_tdata(c_s_axis_tdata_2_r),
+	.c_s_axis_tuser(c_s_axis_tuser_2_r),
+	.c_s_axis_tkeep(c_s_axis_tkeep_2_r),
+	.c_s_axis_tvalid(c_s_axis_tvalid_2_r),
+	.c_s_axis_tlast(c_s_axis_tlast_2_r),
 
     .c_m_axis_tdata(c_m_axis_tdata),
 	.c_m_axis_tuser(c_m_axis_tuser),
@@ -237,16 +249,75 @@ action_engine #(
 // position: [141+:4]
 //
 
-assign phv_out_0 = phv_out;
-assign phv_out_1 = phv_out;
-assign phv_out_2 = phv_out;
-assign phv_out_3 = phv_out;
+// assign phv_out_0 = phv_out;
+// assign phv_out_1 = phv_out;
+// assign phv_out_2 = phv_out;
+// assign phv_out_3 = phv_out;
+// 
+// 
+// assign phv_out_valid_0 = (phv_out[141]==1?1:0) & phv_out_valid_from_ae;
+// assign phv_out_valid_1 = (phv_out[142]==1?1:0) & phv_out_valid_from_ae;
+// assign phv_out_valid_2 = (phv_out[143]==1?1:0) & phv_out_valid_from_ae;
+// assign phv_out_valid_3 = (phv_out[144]==1?1:0) & phv_out_valid_from_ae;
 
+reg [PHV_LEN-1:0] phv_out_0_next;
+reg [PHV_LEN-1:0] phv_out_1_next;
+reg [PHV_LEN-1:0] phv_out_2_next;
+reg [PHV_LEN-1:0] phv_out_3_next;
+reg phv_out_valid_0_next;
+reg phv_out_valid_1_next;
+reg phv_out_valid_2_next;
+reg phv_out_valid_3_next;
 
-assign phv_out_valid_0 = (phv_out[141]==1?1:0) & phv_out_valid_from_ae;
-assign phv_out_valid_1 = (phv_out[142]==1?1:0) & phv_out_valid_from_ae;
-assign phv_out_valid_2 = (phv_out[143]==1?1:0) & phv_out_valid_from_ae;
-assign phv_out_valid_3 = (phv_out[144]==1?1:0) & phv_out_valid_from_ae;
+always @(*) begin
+	phv_out_valid_0_next = 0;
+	phv_out_valid_1_next = 0;
+	phv_out_valid_2_next = 0;
+	phv_out_valid_3_next = 0;
+
+	phv_out_0_next = phv_out;
+	phv_out_1_next = phv_out;
+	phv_out_2_next = phv_out;
+	phv_out_3_next = phv_out;
+
+	if (phv_out_valid_from_ae) begin
+		if (phv_out[141]) begin
+			phv_out_valid_0_next = 1;
+		end
+		if (phv_out[142]) begin
+			phv_out_valid_1_next = 1;
+		end
+		if (phv_out[143]) begin
+			phv_out_valid_2_next = 1;
+		end
+		if (phv_out[144]) begin
+			phv_out_valid_3_next = 1;
+		end
+	end
+end
+
+always @(posedge axis_clk) begin
+	if (~aresetn) begin
+		phv_out_0 <= 0;
+		phv_out_1 <= 0;
+		phv_out_2 <= 0;
+		phv_out_3 <= 0;
+		phv_out_valid_0 <= 0;
+		phv_out_valid_1 <= 0;
+		phv_out_valid_2 <= 0;
+		phv_out_valid_3 <= 0;
+	end
+	else begin
+		phv_out_0 <= phv_out_0_next;
+		phv_out_1 <= phv_out_1_next;
+		phv_out_2 <= phv_out_2_next;
+		phv_out_3 <= phv_out_3_next;
+		phv_out_valid_0 <= phv_out_valid_0_next;
+		phv_out_valid_1 <= phv_out_valid_1_next;
+		phv_out_valid_2 <= phv_out_valid_2_next;
+		phv_out_valid_3 <= phv_out_valid_3_next;
+	end
+end
 
 always @(posedge axis_clk) begin
 	if (~aresetn) begin
@@ -261,6 +332,18 @@ always @(posedge axis_clk) begin
 		//
 		act_vlan_out_r <= 0;
 		act_vlan_out_valid_r <= 0;
+		//
+		c_s_axis_tdata_1_r <= 0;
+		c_s_axis_tkeep_1_r <= 0;
+		c_s_axis_tuser_1_r <= 0;
+		c_s_axis_tvalid_1_r <= 0;
+		c_s_axis_tlast_1_r <= 0;
+
+		c_s_axis_tdata_2_r <= 0;
+		c_s_axis_tkeep_2_r <= 0;
+		c_s_axis_tuser_2_r <= 0;
+		c_s_axis_tvalid_2_r <= 0;
+		c_s_axis_tlast_2_r <= 0;
 	end
 	else begin
 		key2lookup_key_r <= key2lookup_key;
@@ -274,6 +357,18 @@ always @(posedge axis_clk) begin
 		//
 		act_vlan_out_r <= act_vlan_out;
 		act_vlan_out_valid_r <= act_vlan_out_valid;
+		//
+		c_s_axis_tdata_1_r <= c_s_axis_tdata_1;
+		c_s_axis_tkeep_1_r <= c_s_axis_tkeep_1;
+		c_s_axis_tuser_1_r <= c_s_axis_tuser_1;
+		c_s_axis_tvalid_1_r <= c_s_axis_tvalid_1;
+		c_s_axis_tlast_1_r <= c_s_axis_tlast_1;
+
+		c_s_axis_tdata_2_r <= c_s_axis_tdata_2;
+		c_s_axis_tkeep_2_r <= c_s_axis_tkeep_2;
+		c_s_axis_tuser_2_r <= c_s_axis_tuser_2;
+		c_s_axis_tvalid_2_r <= c_s_axis_tvalid_2;
+		c_s_axis_tlast_2_r <= c_s_axis_tlast_2;
 	end
 end
 

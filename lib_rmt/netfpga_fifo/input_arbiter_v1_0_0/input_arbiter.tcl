@@ -43,7 +43,7 @@ set lib_name NetFPGA
 create_project -name ${design} -force -dir "./${proj_dir}" -part ${device} -ip
 set_property source_mgmt_mode All [current_project]  
 set_property top ${top} [current_fileset]
-set_property ip_repo_paths /home/wtao/workspace/hc20-verilog/corundum/fpga/lib_rmt/netfpga_fifo/  [current_fileset]
+set_property ip_repo_paths $::env(LIB_RMT_PATH)/netfpga_fifo/  [current_fileset]
 puts "Creating Input Arbiter IP"
 #####################################
 # Project Structure & IP Build

@@ -1,0 +1,318 @@
+diff --color -uNr ./utils-raw/cookie_test.c ./utils/cookie_test.c
+--- ./utils-raw/cookie_test.c	1970-01-01 08:00:00.000000000 +0800
++++ ./utils/cookie_test.c	2021-12-17 08:49:21.665609898 +0800
+@@ -0,0 +1,113 @@
++#include <errno.h>
++#include <fcntl.h>
++//#include <math.h>
++//#include <signal.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <sys/mman.h>
++//#include <sys/stat.h>
++//#include <sys/time.h>
++//#include <sys/timex.h>
++#include <sys/types.h>
++#include <time.h>
++#include <unistd.h>
++
++#include "timespec.h"
++
++#include "mqnic.h"
++
++#define NSEC_PER_SEC 1000000000
++
++
++static void usage(char *name)
++{
++    fprintf(stderr,
++        "usage: %s [options]\n"
++        " -d name    device to open (/dev/mqnic0)\n"
++        " -i number  interface\n"
++        " -P number  port\n"
++        " -s number  TDMA schedule start time (ns)\n"
++        " -p number  TDMA schedule period (ns)\n"
++        " -t number  TDMA timeslot period (ns)\n"
++        " -a number  TDMA active period (ns)\n",
++        name);
++}
++
++
++int main(int argc, char *argv[])
++{
++    char *name;
++    char *device;
++    char *device = NULL;
++    struct mqnic *dev;
++    int interface = 0;
++    int port = 0;
++    int cookie  = 0;
++    int token = 0;
++
++    name = strrchr(argv[0], '/');
++    name = name ? 1+name : argv[0];
++
++    while ((opt = getopt(argc, argv, "d:i:P:s:p:t:a:h?")) != EOF)
++    {
++        switch (opt)
++        {
++        case 'd':
++            device = optarg;
++            break;
++        case 'i':
++            interface = atoi(optarg);
++            break;
++        case 'P':
++            port = atoi(optarg);
++            break;
++        case 's':
++            start_nsec = atoll(optarg);
++            break;
++        case 'p':
++            period_nsec = atoll(optarg);
++            break;
++        case 't':
++            timeslot_period_nsec = atoll(optarg);
++            break;
++        case 'a':
++            active_period_nsec = atoll(optarg);
++            break;
++        case 'h':
++        case '?':
++            usage(name);
++            return 0;
++        default:
++            usage(name);
++            return -1;
++        }
++    }
++
++    if (!device)
++    {
++        fprintf(stderr, "Device not specified\n");
++        usage(name);
++        return -1;
++    }
++
++    dev = mqnic_open(device);
++
++    if (!dev)
++    {
++        fprintf(stderr, "Failed to open device\n");
++        return -1;
++    }
++    struct mqnic_if *dev_interface = &dev->interfaces[interface];
++    struct mqnic_port *dev_port = &dev_interface->ports[port];
++
++    cookie = mqnic_reg_read32(dev_port->regs, MQNIC_PORT_REG_RMT_COOKIE);
++    token = mqnic_reg_read32(dev_port->regs, MQNIC_PORT_REG_RMT_TOKEN);
++    
++    printf("the cookie value is %03x\n", cookie);
++    printf("the token value is %03x\n", token);
++
++    return 0;
++}
+\ No newline at end of file
+diff --color -uNr ./utils-raw/ctrl_demo.py ./utils/ctrl_demo.py
+--- ./utils-raw/ctrl_demo.py	1970-01-01 08:00:00.000000000 +0800
++++ ./utils/ctrl_demo.py	2021-12-17 08:49:21.665609898 +0800
+@@ -0,0 +1,10 @@
++from ctypes import *
++from datetime import datetime
++so_file = "/home/earl_07/corundum-forked/utils/mqnic.so"
++
++now = datetime.now()
++get_cookie = CDLL(so_file)
++print(type(get_cookie))
++print(get_cookie.get_cookie())
++print(get_cookie.get_token())
++print("%02d %02d", now.microsecond, now.microsecond)
+diff --color -uNr ./utils-raw/Makefile ./utils/Makefile
+--- ./utils-raw/Makefile	2022-01-31 12:57:08.311408638 +0800
++++ ./utils/Makefile	2022-01-31 12:56:44.347498959 +0800
+@@ -1,30 +1,16 @@
+-
+ PREFIX=/usr/local
+ BINDIR=$(DESTDIR)$(PREFIX)/bin
+ 
+ CC=gcc
+-CFLAGS=-O3 -Wall -I../modules/mqnic
+-
+-BIN=mqnic-config mqnic-dump mqnic-fw perout
+-
+-all: $(BIN)
++CFLAGS=-fPIC -O3 -Wall -I../modules/mqnic
++LDFLAGS=-shared
+ 
+-mqnic-config: mqnic-config.c mqnic.c timespec.c
+-	$(CC) $(CFLAGS) $^ -o $@
++TARGET = mqnic.so
+ 
+-mqnic-dump: mqnic-dump.c mqnic.c
+-	$(CC) $(CFLAGS) $^ -o $@
++all: $(TARGET)
+ 
+-mqnic-fw: mqnic-fw.c mqnic.c flash.c flash_spi.c flash_bpi.c fpga_id.c bitfile.c
+-	$(CC) $(CFLAGS) $^ -o $@
+-
+-perout: perout.c timespec.c
+-	$(CC) $(CFLAGS) $^ -o $@
+-
+-install:
+-	install -d $(BINDIR)
+-	install -m 0755 $(BIN) $(BINDIR)
++mqnic.so: mqnic.c
++	$(CC) $^ $(CFLAGS) $(LDFLAGS) -o $(TARGET)
+ 
+ clean:
+-	rm -f $(BIN)
+-
++	rm $(TARGET)
+diff --color -uNr ./utils-raw/mqnic.c ./utils/mqnic.c
+--- ./utils-raw/mqnic.c	2022-01-31 12:57:08.311408638 +0800
++++ ./utils/mqnic.c	2021-12-17 08:49:21.665609898 +0800
+@@ -137,6 +137,7 @@
+     dev->if_stride = mqnic_reg_read32(dev->regs, MQNIC_REG_IF_STRIDE);
+     dev->if_csr_offset = mqnic_reg_read32(dev->regs, MQNIC_REG_IF_CSR_OFFSET);
+ 
++
+     if (dev->if_count > MQNIC_MAX_IF)
+         dev->if_count = MQNIC_MAX_IF;
+ 
+@@ -202,6 +203,16 @@
+ 
+             port->tdma_timeslot_count = mqnic_reg_read32(port->regs, MQNIC_PORT_REG_TDMA_TIMESLOT_COUNT);
+ 
++            /*
++            * checkme: inserted testcase for axil channel in RMT
++            */
++            if(k == 0) {
++                port->if_token = mqnic_reg_read32(dev->regs, MQNIC_PORT_REG_RMT_TOKEN);
++                port->if_cookie = mqnic_reg_read32(dev->regs, MQNIC_PORT_REG_RMT_COOKIE);
++                //printf("token value is: %08x\n", port->if_token);
++                //printf("cookie value is: %08x\n", port->if_cookie);
++            }
++
+             for (int m = 0; m < port->sched_count; m++)
+             {
+                 struct mqnic_sched *sched = &port->sched[m];
+@@ -239,3 +250,66 @@
+     free(dev);
+ }
+ 
++uint32_t get_cookie()
++{
++    char *name;
++    char *device = NULL;
++    struct mqnic *dev;
++    int interface = 0;
++    int port = 0;
++    uint32_t cookie  = 0;
++    uint32_t token = 0;
++
++    char dev_name[6] = "ens0f1";
++    name = malloc(sizeof(dev_name));
++    
++    dev = mqnic_open(name);
++
++    if (!dev)
++    {
++        fprintf(stderr, "Failed to open device\n");
++        return -1;
++    }
++    struct mqnic_if *dev_interface = &dev->interfaces[interface];
++    struct mqnic_port *dev_port = &dev_interface->ports[port];
++
++    cookie = mqnic_reg_read32(dev_port->regs, MQNIC_PORT_REG_RMT_COOKIE);
++
++    return cookie;
++    
++    //printf("the cookie value is %03x\n", cookie);
++    //printf("the token value is %03x\n", token);
++
++}   
++
++uint32_t get_token()
++{
++    char *name;
++    char *device = NULL;
++    struct mqnic *dev;
++    int interface = 0;
++    int port = 0;
++    uint32_t cookie  = 0;
++    uint32_t token = 0;
++
++    char dev_name[6] = "ens0f1";
++    name = malloc(sizeof(dev_name));
++    
++    dev = mqnic_open(device);
++
++    if (!dev)
++    {
++        fprintf(stderr, "Failed to open device\n");
++        return -1;
++    }
++    struct mqnic_if *dev_interface = &dev->interfaces[interface];
++    struct mqnic_port *dev_port = &dev_interface->ports[port];
++
++    token = mqnic_reg_read32(dev_port->regs, MQNIC_PORT_REG_RMT_TOKEN);
++
++    return token;
++    
++    //printf("the cookie value is %03x\n", cookie);
++    //printf("the token value is %03x\n", token);
++
++}   
+Binary files ./utils-raw/mqnic-config and ./utils/mqnic-config differ
+diff --color -uNr ./utils-raw/mqnic-config.c ./utils/mqnic-config.c
+--- ./utils-raw/mqnic-config.c	2022-01-31 12:57:08.311408638 +0800
++++ ./utils/mqnic-config.c	2021-12-17 08:49:21.665609898 +0800
+@@ -142,6 +142,7 @@
+         return -1;
+     }
+ 
++
+     printf("FW ID: 0x%08x\n", dev->fw_id);
+     printf("FW version: %d.%d\n", dev->fw_ver >> 16, dev->fw_ver & 0xffff);
+     printf("Board ID: 0x%08x\n", dev->board_id);
+@@ -153,6 +154,12 @@
+     printf("IF stride: 0x%08x\n", dev->if_stride);
+     printf("IF CSR offset: 0x%08x\n", dev->if_csr_offset);
+ 
++    // /*
++    // *   checkme: hope its right for RMT
++    // */
++    // printf("token value of RMT: 0x%08x\n", dev->if_token);
++    // printf("token value of RMT: 0x%08x\n", dev->if_cookie);
++
+     if (dev->phc_count == 0)
+     {
+         fprintf(stderr, "No PHC on card\n");
+Binary files ./utils-raw/mqnic-dump and ./utils/mqnic-dump differ
+Binary files ./utils-raw/mqnic-fw and ./utils/mqnic-fw differ
+diff --color -uNr ./utils-raw/mqnic.h ./utils/mqnic.h
+--- ./utils-raw/mqnic.h	2022-01-31 12:57:08.311408638 +0800
++++ ./utils/mqnic.h	2021-12-17 08:49:21.665609898 +0800
+@@ -68,6 +68,9 @@
+     uint32_t sched_stride;
+     uint32_t sched_type;
+ 
++    uint32_t if_token;
++    uint32_t if_cookie;
++
+     uint32_t tdma_timeslot_count;
+ 
+     struct mqnic_sched sched[MQNIC_MAX_SCHED];
+@@ -126,4 +129,8 @@
+ struct mqnic *mqnic_open(const char *dev_name);
+ void mqnic_close(struct mqnic *dev);
+ 
++//for RMT execlusively
++uint32_t get_cookie();
++uint32_t get_token();
++
+ #endif /* MQNIC_H */
+Binary files ./utils-raw/perout and ./utils/perout differ

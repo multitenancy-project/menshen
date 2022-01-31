@@ -45,8 +45,6 @@ module pkt_filter #(
 
 );
 
-assign s_axis_tready = m_axis_tready;
-
 
 wire [C_S_AXIS_DATA_WIDTH-1:0]	pkt_fifo_tdata;
 wire [C_S_AXIS_DATA_WIDTH/8-1:0]	pkt_fifo_tkeep;

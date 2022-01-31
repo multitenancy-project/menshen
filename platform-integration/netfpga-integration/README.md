@@ -3,7 +3,7 @@
 (1) get Menshen repo, set some envs
 
 ```bash
-git clone git@github.com:multitenancy-project/corundum-forked-after-sigcomm.git /path/to/menshen
+git clone git@github.com:multitenancy-project/menshen.git /path/to/menshen
 
 export LIB_RMT_PATH=/path/to/menshen/lib_rmt
 export ONNETFPGA_PATH=/path/to/menshen/platform-integration/netfpga-integration

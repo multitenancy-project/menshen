@@ -25,3 +25,5 @@ project_pktgen/
 
 export_sim/
 *.pb
+
+.DS_Store

@@ -1,0 +1,54 @@
+diff --color -uNr ./modules-raw/mqnic/mqnic_dev.c ./modules/mqnic/mqnic_dev.c
+--- ./modules-raw/mqnic/mqnic_dev.c	2022-01-31 12:47:44.301531939 +0800
++++ ./modules/mqnic/mqnic_dev.c	2021-12-17 08:49:21.665609898 +0800
+@@ -121,6 +121,12 @@
+ 
+             return 0;
+         }
++
++    // case MQNIC_IOCTL_COOKIE:
++    //     {
++    //         struct mqnic_ioctl_cookie_info ctl_cookie;
++    //         ctl_cookie
++    //     }   
+     default:
+         return -ENOTTY;
+     }
+diff --color -uNr ./modules-raw/mqnic/mqnic_hw.h ./modules/mqnic/mqnic_hw.h
+--- ./modules-raw/mqnic/mqnic_hw.h	2022-01-31 12:47:44.301531939 +0800
++++ ./modules/mqnic/mqnic_hw.h	2021-12-17 08:49:21.665609898 +0800
+@@ -211,6 +211,10 @@
+ #define MQNIC_PORT_REG_TDMA_ACTIVE_PERIOD_SEC_L   0x1048
+ #define MQNIC_PORT_REG_TDMA_ACTIVE_PERIOD_SEC_H   0x104C
+ 
++#define MQNIC_PORT_REG_RMT_COOKIE                 0x2020
++#define MQNIC_PORT_REG_RMT_TOKEN                  0x2024
++#define MQNIC_PORT_REG_RMT_VLAN_FLAG              0x2028
++
+ #define MQNIC_PORT_FEATURE_RSS                    (1 << 0)
+ #define MQNIC_PORT_FEATURE_PTP_TS                 (1 << 4)
+ #define MQNIC_PORT_FEATURE_TX_CSUM                (1 << 8)
+diff --color -uNr ./modules-raw/mqnic/mqnic_ioctl.h ./modules/mqnic/mqnic_ioctl.h
+--- ./modules-raw/mqnic/mqnic_ioctl.h	2022-01-31 12:47:44.301531939 +0800
++++ ./modules/mqnic/mqnic_ioctl.h	2021-12-17 08:49:21.665609898 +0800
+@@ -37,8 +37,10 @@
+ #include <linux/types.h>
+ 
+ #define MQNIC_IOCTL_TYPE 0x88
++// #define MQNIC_IOCTL_COOKIE_CMD 0x77
+ 
+ #define MQNIC_IOCTL_INFO _IOR(MQNIC_IOCTL_TYPE, 0xf0, struct mqnic_ioctl_info)
++// #define MQNIC_IOCTL_COOKIE _IOR(MQNIC_IOCTL_COOKIE_CMD, 0xf1, struct mqnic_ioctl_cookie_info)
+ 
+ struct mqnic_ioctl_info {
+     __u32 fw_id;
+@@ -48,4 +50,9 @@
+     size_t regs_size;
+ };
+ 
++// struct mqnic_ioctl_cookie_info {
++//    __u32 rmt_cookie;
++//    __u32 rmt_token;
++// };
++
+ #endif /* MQNIC_IOCTL_H */

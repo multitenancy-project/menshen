@@ -12,3 +12,18 @@ xvlog*
 
 tb_demo.v
 *.bit
+*.xml
+hbs/
+ip_user_files/
+*.log
+*.jou
+xgui/
+data/
+ip_proj/
+project_sim/
+project_pktgen/
+
+export_sim/
+*.pb
+
+.DS_Store

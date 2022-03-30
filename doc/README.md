@@ -1,6 +1,6 @@
 ## Design notes
 
-![overview](./doc/imgs/overview.png)
+![overview](./imgs/overview.png)
 
 The whole processing pipeline has `4` main modules: (1) `packet filter`, (2) `programmable parser`, (3) several processing `stage`s, each consists of (a) `key extractor`, (b) `lookup engine` and (c) `action engine`, (4) `programmable deparser`.
 
@@ -42,7 +42,7 @@ one parse action is a 16-bit configuration, each user (i.e., identified by VLAN 
 
 After parsing, the pipeline works on the PHV generated. In our design, the PHV contains **packet header** (defined by the user) and **metadata** (ingress port, length, etc.). (NOTE: the order of container index is in decreasing order)
 
-  ![phv](./doc/imgs/phv.png)
+  ![phv](./imgs/phv.png)
 
 
 Above is the format of PHV in our design  ```|8x6B|8x4B|8x2B|256b|```. Basically, we have 3 types of PHV containers of different sizes (i.e., 6B, 4B, 2B) and one giant container for metadata, which is in total 256b:
@@ -69,7 +69,7 @@ The `key extractor` will extract the key out of PHV according to the instruction
 
 The format of this instruction is shown below:
 
-![key_extract](./doc/imgs/key_extractor.png)
+![key_extract](./imgs/key_extractor.png)
 
 Basically, we have allocated `2` containers for each type and appended an comparator to support `if` statement in the p4 action.
 
@@ -104,7 +104,7 @@ For the match part, we directly use the [Xilinx CAM](https://www.xilinx.com/supp
 
 `action engine` takes the `action` output from `lookup engine`, and modifies PHV according to it. The actions that will be supported in the demo include `add`, `addi`, `sub`, `subi`, `load`, `loadd`, `store`, `redirect port`, `discard`.
 
-  ![action](./doc/imgs/action.png)
+  ![action](./imgs/action.png)
 
   1. `add`: takes two operands from the PHV based on the indexes in the action field, add them, and write the result back to the location of 1st operand.
   2. `addi`: takes one operand from PHV based on the index in the action field and one operand from the action field directly, add them, and write the result back to the location of operand. 
@@ -123,15 +123,15 @@ For the match part, we directly use the [Xilinx CAM](https://www.xilinx.com/supp
   
     For `add` (`4b'0001`), `load`(`4b'1011`), `loadd`(`4b0111'`) and `store`(`4b'1000`) and `sub` (`4b'0010`) operations, the action format is:
   
-    ![2_action](./doc/imgs/2_action.png)
+    ![2_action](./imgs/2_action.png)
   
     For `addi`(`4b'1001`), `subi`(`4b'1010`), `set`(`4b'1110`), the action format is:
   
-    ![1_action](./doc/imgs/1_action.png)
+    ![1_action](./imgs/1_action.png)
   
     For `port`(`4b'1100`) and `discard`(`4b'1101`), the action format is:
   
-    ![md_action](./doc/imgs/md_action.png)
+    ![md_action](./imgs/md_action.png)
 
     The default action field is `0x3f`, which can be seen if no action is matched.
 
@@ -139,7 +139,7 @@ For the match part, we directly use the [Xilinx CAM](https://www.xilinx.com/supp
 In order to support VLIW (very long instruction word) in the action engine, there are 24 standard ALUs hard-wired with 24 containers in the PHV, and also 1 extra ALU to modify the metadata field in the PHV. A workflow of the action engine can be shown in the figure below:
 
 
-  ![action_engine](./doc/imgs/action_engine.png)
+  ![action_engine](./imgs/action_engine.png)
 
   * Support for Memory-related operations in multi-tenancy
 
@@ -174,7 +174,7 @@ In order to support VLIW (very long instruction word) in the action engine, ther
 
   #### The Method
 
-  ![control_method](./doc/imgs/control_method.png)
+  ![control_method](./imgs/control_method.png)
 
 We designed a stateless method to modify the table enties in the pipeline. Specifically, we use a specialized group of packets (i.e., `module configuration` packets) to modify the table entries. The packet can be generated from the software side and contains the info about which table and how the table will be modified.
 
@@ -204,7 +204,7 @@ Each module will check whether it is the target of the packet: if so, the module
 
       The Control Packet Header takes the advantage of Resource ID to identify the specific module, and modify the table accordingly. the format is shown below:
 
-      ![control_format](./doc/imgs/ctrl_pkt_format.png)
+      ![control_format](./imgs/ctrl_pkt_format.png)
 
       1. `resource ID (|5b|3b|4b|)`: the first 5b is the stage number, the next 3b is the module ID. 
       2. `resv`: reserve field, can be used when there are multiple tables in a module.

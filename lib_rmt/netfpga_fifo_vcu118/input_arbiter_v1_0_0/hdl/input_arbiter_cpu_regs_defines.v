@@ -16,7 +16,7 @@
 // Stanford University and the University of Cambridge Computer Laboratory
 // under National Science Foundation under Grant No. CNS-0855268,
 // the University of Cambridge Computer Laboratory under EPSRC INTERNET Project EP/H040536/1 and
-// by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"),
+// by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"), 
 // as part of the DARPA MRC research programme.
 //
 // @NETFPGA_LICENSE_HEADER_START@
@@ -39,37 +39,37 @@
 //
 
 
-`define  REG_ID_BITS				31:0
+           `define  REG_ID_BITS				31:0
            `define  REG_ID_WIDTH				32
            `define  REG_ID_DEFAULT			32'h0000DA01
            `define  REG_ID_ADDR				32'h0
 
-`define  REG_VERSION_BITS				31:0
+           `define  REG_VERSION_BITS				31:0
            `define  REG_VERSION_WIDTH				32
            `define  REG_VERSION_DEFAULT			32'h1
            `define  REG_VERSION_ADDR				32'h4
 
-`define  REG_RESET_BITS				15:0
+           `define  REG_RESET_BITS				15:0
            `define  REG_RESET_WIDTH				16
            `define  REG_RESET_DEFAULT			16'h0
            `define  REG_RESET_ADDR				32'h8
 
-`define  REG_FLIP_BITS				31:0
+           `define  REG_FLIP_BITS				31:0
            `define  REG_FLIP_WIDTH				32
            `define  REG_FLIP_DEFAULT			32'h0
            `define  REG_FLIP_ADDR				32'hC
 
-`define  REG_DEBUG_BITS				31:0
+           `define  REG_DEBUG_BITS				31:0
            `define  REG_DEBUG_WIDTH				32
            `define  REG_DEBUG_DEFAULT			32'h0
            `define  REG_DEBUG_ADDR				32'h10
 
-`define  REG_PKTIN_BITS				31:0
+           `define  REG_PKTIN_BITS				31:0
            `define  REG_PKTIN_WIDTH				32
            `define  REG_PKTIN_DEFAULT			32'h0
            `define  REG_PKTIN_ADDR				32'h14
 
-`define  REG_PKTOUT_BITS				31:0
+           `define  REG_PKTOUT_BITS				31:0
            `define  REG_PKTOUT_WIDTH				32
            `define  REG_PKTOUT_DEFAULT			32'h0
            `define  REG_PKTOUT_ADDR				32'h18

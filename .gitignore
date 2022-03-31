@@ -27,3 +27,4 @@ export_sim/
 *.pb
 
 .DS_Store
+.so

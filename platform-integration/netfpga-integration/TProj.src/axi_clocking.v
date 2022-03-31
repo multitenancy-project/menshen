@@ -2,10 +2,10 @@
 // Copyright (c) 2015 Noa Zilberman
 // All rights reserved.
 //
-// This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
+// This software was developed by Stanford University and the University of Cambridge Computer Laboratory
 // under National Science Foundation under Grant No. CNS-0855268,
 // the University of Cambridge Computer Laboratory under EPSRC INTERNET Project EP/H040536/1 and
-// by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"), 
+// by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"),
 // as part of the DARPA MRC research programme.
 //
 //  File:
@@ -42,38 +42,38 @@
 `timescale 1ps / 1ps
 (* dont_touch = "yes" *)
 module axi_clocking
-  (
-   // Inputs
-   input clk_in_p,
-   input clk_in_n,
-   input resetn,
-   // Status outputs
-   
-   // IBUFDS 200MHz  
-   output locked,  
-   output clk_200 
-   
-   );
+    (
+        // Inputs
+        input clk_in_p,
+        input clk_in_n,
+        input resetn,
+        // Status outputs
 
-  // Signal declarations
-  wire s_axi_dcm_aclk0;
-  wire clkfbout;
+        // IBUFDS 200MHz
+        output locked,
+        output clk_200
 
-  // 200MHz differencial into single-rail     
-  IBUFDS clkin1_buf
-   (.O  (clkin1),
-    .I  (clk_in_p),
-    .IB (clk_in_n)
     );
 
+    // Signal declarations
+    wire s_axi_dcm_aclk0;
+    wire clkfbout;
 
-clk_wiz_ip clk_wiz_i
-   (
-   // Clock in ports
-    .clk_in1(clkin1),      // input clk_in1
-    // Clock out ports
-    .clk_out1(clk_200),     // output clk_out1
-    // Status and control signals
-    .resetn(resetn), // input resetn
-    .locked(locked));
+    // 200MHz differencial into single-rail
+    IBUFDS clkin1_buf
+           (.O  (clkin1),
+            .I  (clk_in_p),
+            .IB (clk_in_n)
+           );
+
+
+    clk_wiz_ip clk_wiz_i
+               (
+                   // Clock in ports
+                   .clk_in1(clkin1),      // input clk_in1
+                   // Clock out ports
+                   .clk_out1(clk_200),     // output clk_out1
+                   // Status and control signals
+                   .resetn(resetn), // input resetn
+                   .locked(locked));
 endmodule

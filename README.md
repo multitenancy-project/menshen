@@ -254,10 +254,10 @@ Two key points regarding cookie implementation:
 
     1. According to RMT, which match table the packet is going through is determined by the result (action) of the last match. In this way it forms a TTP (see TTP in OpenFlow).
     
-      > The `control flow` is realized by giving each table an **index** (stage NO) and judging whether the PHV should be handled in the current stage by matching the **index** with a specific field in the `metadata`. Noted that the field in metadata that controls the control flow is modified by the action in each stage.
+      > The `control flow` in the orignal RMT paper is done by giving each table an **index** (stage NO) and judging whether the PHV should be handled in the current stage by matching the **index** with a specific field in the `metadata`. Noted that the field in metadata that controls the control flow is modified by the action in each stage.
     
     2. Another question worth to ask is how to determine which fields in the container is going to be matched in the current stage.
     
-      > One method would be using TCAM for the match table and masking the fields that we don't care.
+      > One method would be using TCAM for the match table and masking the fields that we don't care. (This is how Menshen tackles the issue).
     
     3. Different from the original RMT, we use a lookup table to support flexible key extraction from `PHV`. This is added in order to support multi-tenants scenarios, as different users may put the fields they are interested in into different PHV containers.
